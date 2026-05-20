@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Таблица: part (Детали)</h3>
+<form method="POST" class="mb-4 bg-light p-3 border">
+    <div class="row">
+        <div class="col"><input type="text" name="name" class="form-control" placeholder="Название (name)" required></div>
+        <div class="col"><input type="text" name="article" class="form-control" placeholder="Артикул (article)" required></div>
+        <div class="col"><button type="submit" class="btn btn-success">Добавить</button></div>
+    </div>
+</form>
+<table class="table table-bordered">
+    <thead class="table-dark"><tr><th>id_part</th><th>name</th><th>article</th><th>Действие</th></tr></thead>
+    <tbody>
+        {% for row in data %}
+        <tr><td>{{ row.id_part }}</td><td>{{ row.name }}</td><td>{{ row.article }}</td>
+        <td><a href="/delete_part/{{ row.id_part }}" class="btn btn-sm btn-danger">Удалить</a></td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

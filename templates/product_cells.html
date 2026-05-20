@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Таблица: product_warehouse_cell (Склад изделий)</h3>
+<form method="POST" class="mb-4 bg-light p-3 border">
+    <div class="row">
+        <div class="col"><input type="text" name="cell_number" class="form-control" placeholder="Номер ячейки" required></div>
+        <div class="col">
+            <select name="product_type_id" class="form-control" required>
+                <option value="">Тип изделия (product_type_id)...</option>
+                {% for p in products %}<option value="{{ p.id_product_type }}">{{ p.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col"><input type="number" name="quantity_stored" class="form-control" placeholder="Кол-во хранимого" required></div>
+        <div class="col"><button type="submit" class="btn btn-success">Добавить</button></div>
+    </div>
+</form>
+<table class="table table-bordered">
+    <thead class="table-dark"><tr><th>id_product_cell</th><th>cell_number</th><th>Изделие (product_type_id)</th><th>quantity_stored</th><th>Действие</th></tr></thead>
+    <tbody>
+        {% for row in data %}
+        <tr><td>{{ row.id_product_cell }}</td><td>{{ row.cell_number }}</td><td>{{ row.product_name }}</td><td>{{ row.quantity_stored }}</td>
+        <td><a href="/delete_product_cell/{{ row.id_product_cell }}" class="btn btn-sm btn-danger">Удалить</a></td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Таблица: product_composition (Состав изделий)</h3>
+<form method="POST" class="mb-4 bg-light p-3 border">
+    <div class="row">
+        <div class="col">
+            <select name="product_type_id" class="form-control" required>
+                <option value="">Выберите изделие...</option>
+                {% for p in products %}<option value="{{ p.id_product_type }}">{{ p.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col">
+            <select name="part_id" class="form-control" required>
+                <option value="">Выберите деталь...</option>
+                {% for part in parts %}<option value="{{ part.id_part }}">{{ part.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col"><input type="number" name="quantity" class="form-control" placeholder="Количество" required></div>
+        <div class="col"><button type="submit" class="btn btn-success">Добавить</button></div>
+    </div>
+</form>
+<table class="table table-bordered">
+    <thead class="table-dark"><tr><th>Изделие</th><th>Деталь</th><th>Количество</th><th>Действие</th></tr></thead>
+    <tbody>
+        {% for row in data %}
+        <tr><td>{{ row.product_name }}</td><td>{{ row.part_name }}</td><td>{{ row.quantity }}</td>
+        <td><a href="/delete_composition/{{ row.product_type_id }}/{{ row.part_id }}" class="btn btn-sm btn-danger">Удалить</a></td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

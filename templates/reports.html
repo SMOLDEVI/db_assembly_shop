@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Детали, недостающие для выполнения плана</h2>
+<p class="text-muted">Расчет производится по формуле: (План выпуска * Необходимое кол-во в изделии) - Наличие на складе</p>
+
+<a href="/export_csv" class="btn btn-warning mb-3">Скачать отчет (.csv)</a>
+
+<table class="table table-hover table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Деталь</th>
+            <th>Нужно всего по плану</th>
+            <th>Есть на складе</th>
+            <th class="text-danger">Заказать у поставщика</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in missing_data %}
+        <tr>
+            <td><b>{{ row['part_name'] }}</b></td>
+            <td>{{ row['total_needed'] }} шт.</td>
+            <td>{{ row['in_stock'] }} шт.</td>
+            <td class="text-danger fw-bold">{{ row['to_order'] }} шт.</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" class="text-center text-success">Всего хватает! Заказывать ничего не нужно.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

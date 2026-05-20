@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-7">
+        <h2>Состояние склада деталей</h2>
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-dark">
+                <tr>
+                    <th>Номер ячейки</th>
+                    <th>Специализация (Тип детали)</th>
+                    <th>Кол-во в ячейке</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cell in cells %}
+                <tr>
+                    <td><b>{{ cell['cell_id'] }}</b></td>
+                    <td>{{ cell['part_name'] }}</td>
+                    <td>
+                        {% if cell['quantity'] == 0 %}
+                            <span class="badge bg-danger">Пусто</span>
+                        {% else %}
+                            {{ cell['quantity'] }} шт.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="col-md-4 offset-md-1">
+        <div class="card">
+            <div class="card-header bg-success text-white">Прием деталей в ячейку</div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label>Номер ячейки (Например: Д-05)</label>
+                        <input type="text" name="cell_id" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Тип детали</label>
+                        <select name="part_id" class="form-control" required>
+                            {% for part in parts %}
+                            <option value="{{ part.id }}">{{ part.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Количество (приход)</label>
+                        <input type="number" name="quantity" class="form-control" value="0" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Добавить на склад</button>
+                </form>
+                <small class="text-muted mt-2 d-block">*Если ячейка уже существует, количество прибавится к текущему.</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
