@@ -1,5 +1,25 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>Система управления базой данных</h1>
-    <p>Выберите таблицу в меню сверху для редактирования данных.</p>
+<div class="row align-items-center">
+    <div class="col-md-6">
+        <h2 class="mb-4"><i class="bi bi-pie-chart"></i> Аналитика склада готовой продукции</h2>
+        <p class="text-muted">Данная диаграмма формируется автоматически на основе данных из таблицы <code>product_warehouse_cell</code>.</p>
+    </div>
+    <div class="col-md-6">
+        <canvas id="stockChart"></canvas>
+    </div>
+</div>
+
+<script>
+    new Chart(document.getElementById('stockChart'), {
+        type: 'pie',
+        data: {
+            labels: {{ labels | safe }},
+            datasets: [{
+                data: {{ data | safe }},
+                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1']
+            }]
+        }
+    });
+</script>
 {% endblock %}
