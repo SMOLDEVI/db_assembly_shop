@@ -255,14 +255,21 @@ def export_csv():
 def parts():
     conn = get_db_connection()
     if request.method == 'POST':
-        conn.execute('INSERT INTO part (name, article) VALUES (?, ?)', (request.form['name'], request.form['article']))
+        category_id = request.form['category_id'] if request.form['category_id'] else None
+        conn.execute('INSERT INTO part (name, article, category_id) VALUES (?, ?, ?)', 
+                     (request.form['name'], request.form['article'], category_id))
         conn.commit()
         flash('Новая деталь успешно добавлена!', 'success')
         return redirect(url_for('parts'))
     
-    data = conn.execute('SELECT * FROM part').fetchall()
+    data = conn.execute('''
+        SELECT p.*, c.name as category_name 
+        FROM part p
+        LEFT JOIN part_category c ON p.category_id = c.id_category
+    ''').fetchall()
+    categories = conn.execute('SELECT * FROM part_category').fetchall()
     conn.close()
-    return render_template('parts.html', data=data)
+    return render_template('parts.html', data=data, categories=categories)
 
 @app.route('/delete_part/<int:id>')
 def delete_part(id):
@@ -390,6 +397,169 @@ def delete_product_cell(id):
     conn.close()
     flash('Ячейка склада изделий удалена.', 'warning')
     return redirect(url_for('product_cells'))
+
+# ================= 9. CRUD ТАБЛИЦЫ: part_category =================
+@app.route('/categories', methods=['GET', 'POST'])
+def categories():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        conn.execute('INSERT INTO part_category (name) VALUES (?)', (request.form['name'],))
+        conn.commit()
+        flash('Новая категория успешно добавлена!', 'success')
+        return redirect(url_for('categories'))
+    data = conn.execute('SELECT * FROM part_category').fetchall()
+    conn.close()
+    return render_template('categories.html', data=data)
+
+@app.route('/delete_category/<int:id>')
+def delete_category(id):
+    conn = get_db_connection()
+    try:
+        conn.execute('DELETE FROM part_category WHERE id_category = ?', (id,))
+        conn.commit()
+        flash('Категория удалена.', 'warning')
+    except:
+        flash('Ошибка удаления! Возможно, в категории есть детали.', 'danger')
+    conn.close()
+    return redirect(url_for('categories'))
+
+# ================= 10. CRUD ТАБЛИЦЫ: supplier =================
+@app.route('/suppliers', methods=['GET', 'POST'])
+def suppliers():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        conn.execute('INSERT INTO supplier (name, contact_info) VALUES (?, ?)', 
+                     (request.form['name'], request.form['contact_info']))
+        conn.commit()
+        flash('Новый поставщик успешно добавлен!', 'success')
+        return redirect(url_for('suppliers'))
+    data = conn.execute('SELECT * FROM supplier').fetchall()
+    conn.close()
+    return render_template('suppliers.html', data=data)
+
+@app.route('/delete_supplier/<int:id>')
+def delete_supplier(id):
+    conn = get_db_connection()
+    try:
+        conn.execute('DELETE FROM supplier WHERE id_supplier = ?', (id,))
+        conn.commit()
+        flash('Поставщик удален.', 'warning')
+    except:
+        flash('Ошибка удаления! Возможно, от поставщика были поставки.', 'danger')
+    conn.close()
+    return redirect(url_for('suppliers'))
+
+# ================= 11. CRUD ТАБЛИЦЫ: part_supply =================
+@app.route('/supplies', methods=['GET', 'POST'])
+def supplies():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        conn.execute('INSERT INTO part_supply (supplier_id, part_id, quantity, price, supply_date) VALUES (?, ?, ?, ?, ?)', 
+                     (request.form['supplier_id'], request.form['part_id'], request.form['quantity'], request.form['price'], request.form['supply_date']))
+        part_id = int(request.form['part_id'])
+        quantity = int(request.form['quantity'])
+        
+        existing_cell = conn.execute('SELECT id_part_cell FROM part_warehouse_cell WHERE part_id = ? LIMIT 1', (part_id,)).fetchone()
+        if existing_cell:
+            conn.execute('UPDATE part_warehouse_cell SET quantity_stored = quantity_stored + ? WHERE id_part_cell = ?', (quantity, existing_cell['id_part_cell']))
+        else:
+            cell_number = f"S-{part_id + 100}"
+            conn.execute('INSERT INTO part_warehouse_cell (cell_number, part_id, quantity_stored) VALUES (?, ?, ?)', (cell_number, part_id, quantity))
+            
+        conn.commit()
+        flash('Поставка зарегистрирована, склад деталей обновлен!', 'success')
+        return redirect(url_for('supplies'))
+        
+    data = conn.execute('''
+        SELECT ps.*, s.name as supplier_name, p.name as part_name 
+        FROM part_supply ps
+        JOIN supplier s ON ps.supplier_id = s.id_supplier
+        JOIN part p ON ps.part_id = p.id_part
+        ORDER BY ps.supply_date DESC
+    ''').fetchall()
+    
+    suppliers_list = conn.execute('SELECT * FROM supplier').fetchall()
+    parts_list = conn.execute('SELECT * FROM part').fetchall()
+    conn.close()
+    return render_template('supplies.html', data=data, suppliers=suppliers_list, parts=parts_list)
+
+@app.route('/delete_supply/<int:id>')
+def delete_supply(id):
+    conn = get_db_connection()
+    supply = conn.execute('SELECT part_id, quantity FROM part_supply WHERE id_supply = ?', (id,)).fetchone()
+    if supply:
+        part_id = supply['part_id']
+        qty = supply['quantity']
+        cell = conn.execute('SELECT id_part_cell, quantity_stored FROM part_warehouse_cell WHERE part_id = ? AND quantity_stored >= ? LIMIT 1', (part_id, qty)).fetchone()
+        if cell:
+            conn.execute('UPDATE part_warehouse_cell SET quantity_stored = quantity_stored - ? WHERE id_part_cell = ?', (qty, cell['id_part_cell']))
+        conn.execute('DELETE FROM part_supply WHERE id_supply = ?', (id,))
+        conn.commit()
+        flash('Поставка удалена, склад деталей откорректирован.', 'warning')
+    conn.close()
+    return redirect(url_for('supplies'))
+
+# ================= 12. CRUD ТАБЛИЦЫ: client_order =================
+@app.route('/orders', methods=['GET', 'POST'])
+def orders():
+    conn = get_db_connection()
+    if request.method == 'POST':
+        conn.execute('INSERT INTO client_order (customer_name, product_type_id, quantity, order_date, status) VALUES (?, ?, ?, ?, ?)', 
+                     (request.form['customer_name'], request.form['product_type_id'], request.form['quantity'], request.form['order_date'], 'В обработке'))
+        conn.commit()
+        flash('Новый заказ клиента успешно принят в обработку!', 'success')
+        return redirect(url_for('orders'))
+        
+    data = conn.execute('''
+        SELECT co.*, pt.name as product_name 
+        FROM client_order co
+        JOIN product_type pt ON co.product_type_id = pt.id_product_type
+        ORDER BY co.order_date DESC
+    ''').fetchall()
+    
+    products_list = conn.execute('SELECT * FROM product_type').fetchall()
+    conn.close()
+    return render_template('orders.html', data=data, products=products_list)
+
+@app.route('/complete_order/<int:id>')
+def complete_order(id):
+    conn = get_db_connection()
+    order = conn.execute('SELECT product_type_id, quantity, status FROM client_order WHERE id_order = ?', (id,)).fetchone()
+    if order:
+        if order['status'] == 'Собран':
+            flash('Заказ уже собран и отгружен!', 'info')
+        else:
+            prod_id = order['product_type_id']
+            qty = order['quantity']
+            stock_row = conn.execute('SELECT SUM(quantity_stored) as total FROM product_warehouse_cell WHERE product_type_id = ?', (prod_id,)).fetchone()
+            in_stock = stock_row['total'] if stock_row['total'] else 0
+            
+            if in_stock >= qty:
+                cells = conn.execute('SELECT id_product_cell, quantity_stored FROM product_warehouse_cell WHERE product_type_id = ? AND quantity_stored > 0', (prod_id,)).fetchall()
+                needed = qty
+                for cell in cells:
+                    if needed <= 0:
+                        break
+                    take = min(needed, cell['quantity_stored'])
+                    conn.execute('UPDATE product_warehouse_cell SET quantity_stored = quantity_stored - ? WHERE id_product_cell = ?', (take, cell['id_product_cell']))
+                    needed -= take
+                
+                conn.execute('UPDATE client_order SET status = "Собран" WHERE id_order = ?', (id,))
+                conn.commit()
+                flash('Заказ успешно собран и отгружен со склада готовой продукции!', 'success')
+            else:
+                flash(f'Недостаточно готовой продукции на складе! Требуется: {qty}, в наличии: {in_stock}. Сначала выполните сборку в авто-режиме.', 'danger')
+    conn.close()
+    return redirect(url_for('orders'))
+
+@app.route('/delete_order/<int:id>')
+def delete_order(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM client_order WHERE id_order = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash('Заказ удален.', 'warning')
+    return redirect(url_for('orders'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

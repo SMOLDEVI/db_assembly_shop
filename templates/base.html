@@ -159,12 +159,37 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-speedometer2"></i> Панель</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/parts"><i class="bi bi-nut"></i> Детали</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/products"><i class="bi bi-box"></i> Изделия</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/compositions"><i class="bi bi-diagram-3"></i> Спецификации</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/part_cells"><i class="bi bi-building-down"></i> Склад деталей</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/product_cells"><i class="bi bi-building-up"></i> Склад готовых</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/reports"><i class="bi bi-file-earmark-bar-graph"></i> Дефицит</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-list-task"></i> Справочники
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/parts"><i class="bi bi-nut"></i> Детали</a></li>
+                            <li><a class="dropdown-item" href="/categories"><i class="bi bi-tags"></i> Категории деталей</a></li>
+                            <li><a class="dropdown-item" href="/products"><i class="bi bi-box"></i> Изделия</a></li>
+                            <li><a class="dropdown-item" href="/compositions"><i class="bi bi-diagram-3"></i> Спецификации</a></li>
+                            <li><a class="dropdown-item" href="/suppliers"><i class="bi bi-truck"></i> Поставщики</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-houses"></i> Учет складов
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/part_cells"><i class="bi bi-building-down"></i> Склад деталей</a></li>
+                            <li><a class="dropdown-item" href="/product_cells"><i class="bi bi-building-up"></i> Склад готовых</a></li>
+                            <li><a class="dropdown-item" href="/supplies"><i class="bi bi-journal-check"></i> Поставки деталей</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-wallet2"></i> Продажи и Отчеты
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/reports"><i class="bi bi-file-earmark-bar-graph"></i> Дефицит под план</a></li>
+                            <li><a class="dropdown-item" href="/orders"><i class="bi bi-cart-check"></i> Заказы клиентов</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item"><a class="nav-link text-warning fw-semibold ms-lg-2" href="/assemble"><i class="bi bi-tools"></i> Сборка (Авто)</a></li>
                 </ul>
                 <a href="/export" class="btn btn-outline-light btn-sm rounded-pill px-3 shadow-sm"><i class="bi bi-file-earmark-arrow-down"></i> Экспорт остатков CSV</a>

@@ -254,19 +254,28 @@ def build_docx():
     add_section("4.1. Сущности и их ключевые атрибуты")
     doc.add_paragraph(
         "В результате анализа предметной области были выделены следующие сущности:\n"
-        "• Деталь (КодДетали, Название, Артикул);\n"
+        "• Категория деталей (КодКатегории, Название);\n"
+        "• Деталь (КодДетали, Название, Артикул, КодКатегории);\n"
+        "• Поставщик (КодПоставщика, Название, КонтактнаяИнформация);\n"
+        "• Поставка деталей (КодПоставки, КодПоставщика, КодДетали, Количество, Цена, ДатаПоставки);\n"
         "• Изделие (КодИзделия, Название, Описание);\n"
+        "• Состав изделия / Спецификация (КодИзделия, КодДетали, Количество);\n"
         "• Ячейка склада деталей (КодЯчейкиДеталей, НомерЯчейки, КодДетали, Количество);\n"
         "• Ячейка склада изделий (КодЯчейкиИзделий, НомерЯчейки, КодИзделия, Количество);\n"
-        "• План производства (КодИзделия, ПланируемоеКоличество)."
+        "• План производства (КодИзделия, ПланируемоеКоличество);\n"
+        "• Заказ клиента (КодЗаказа, ИмяКлиента, КодИзделия, Количество, ДатаЗаказа, Статус)."
     )
 
     add_section("4.2. Бизнес-правила")
     doc.add_paragraph(
+        "• Категория — Деталь: Каждая деталь относится к одной категории. В категории может быть множество деталей.\n"
+        "• Поставщик — Поставка: Поставщик может совершать множество поставок. Поставка совершается одним поставщиком.\n"
+        "• Деталь — Поставка: Деталь может поставляться многократно.\n"
         "• Изделие — Состав: Изделие может состоять из многих деталей. Деталь может входить в состав многих изделий.\n"
         "• Деталь — Ячейка склада: Деталь может быть размещена в нескольких ячейках. В ячейке может находиться только одна деталь.\n"
         "• Изделие — Ячейка готовой продукции: Изделие может находиться в нескольких ячейках готовой продукции. В ячейке хранится только одно изделие.\n"
-        "• Изделие — План: Каждое изделие имеет один целевой показатель плана."
+        "• Изделие — План: Каждое изделие имеет один целевой показатель плана.\n"
+        "• Изделие — Заказ: Заказ оформляется на конкретное изделие. Изделие может заказываться в различных заказах."
     )
 
     add_section("4.3. ER-диаграмма")
@@ -281,12 +290,16 @@ def build_docx():
     add_section("5.1. Отношения базы данных")
     doc.add_paragraph(
         "Логическая схема базы данных представлена в виде следующих отношений (таблиц):\n"
-        "• part(id_part, name, article);\n"
+        "• part_category(id_category, name);\n"
+        "• part(id_part, name, article, category_id);\n"
+        "• supplier(id_supplier, name, contact_info);\n"
+        "• part_supply(id_supply, supplier_id, part_id, quantity, price, supply_date);\n"
         "• product_type(id_product_type, name, description);\n"
         "• product_composition(product_type_id, part_id, quantity);\n"
         "• part_warehouse_cell(id_part_cell, cell_number, part_id, quantity_stored);\n"
         "• product_warehouse_cell(id_product_cell, cell_number, product_type_id, quantity_stored);\n"
-        "• production_plan(product_type_id, target_quantity)."
+        "• production_plan(product_type_id, target_quantity);\n"
+        "• client_order(id_order, customer_name, product_type_id, quantity, order_date, status)."
     )
 
     add_section("5.2. Описание структуры всех отношений БД")
@@ -308,19 +321,43 @@ def build_docx():
         cell.paragraphs[0].runs[0].font.size = Pt(11)
 
     fields_data = [
+        ('Part_Category', 'КодКатегории', 'id_category', 'I', '20', '*'),
+        ('Part_Category', 'Название категории', 'name', 'S', '255', ''),
         ('Part', 'КодДетали', 'id_part', 'I', '20', '*'),
         ('Part', 'Название', 'name', 'S', '255', ''),
         ('Part', 'Артикул', 'article', 'S', '255', ''),
+        ('Part', 'КодКатегории', 'category_id', 'I', '20', ''),
+        ('Supplier', 'КодПоставщика', 'id_supplier', 'I', '20', '*'),
+        ('Supplier', 'Название поставщика', 'name', 'S', '255', ''),
+        ('Supplier', 'Контакты', 'contact_info', 'S', '255', ''),
+        ('Part_Supply', 'КодПоставки', 'id_supply', 'I', '20', '*'),
+        ('Part_Supply', 'КодПоставщика', 'supplier_id', 'I', '20', ''),
+        ('Part_Supply', 'КодДетали', 'part_id', 'I', '20', ''),
+        ('Part_Supply', 'Количество', 'quantity', 'I', '20', ''),
+        ('Part_Supply', 'Цена', 'price', 'R', '20', ''),
+        ('Part_Supply', 'Дата поставки', 'supply_date', 'S', '50', ''),
         ('Product', 'КодИзделия', 'id_product_type', 'I', '20', '*'),
         ('Product', 'Название', 'name', 'S', '255', ''),
+        ('Product', 'Описание', 'description', 'S', '255', ''),
         ('Product_Comp', 'КодИзделия', 'product_type_id', 'I', '20', '*'),
         ('Product_Comp', 'КодДетали', 'part_id', 'I', '20', '*'),
         ('Product_Comp', 'Количество', 'quantity', 'I', '20', ''),
         ('Part_Cell', 'КодЯчейки', 'id_part_cell', 'I', '20', '*'),
         ('Part_Cell', 'НомерЯчейки', 'cell_number', 'S', '255', ''),
+        ('Part_Cell', 'КодДетали', 'part_id', 'I', '20', ''),
         ('Part_Cell', 'Количество', 'quantity_stored', 'I', '20', ''),
+        ('Prod_Cell', 'КодЯчейкиИзделий', 'id_product_cell', 'I', '20', '*'),
+        ('Prod_Cell', 'НомерЯчейки', 'cell_number', 'S', '255', ''),
+        ('Prod_Cell', 'КодИзделия', 'product_type_id', 'I', '20', ''),
+        ('Prod_Cell', 'Количество', 'quantity_stored', 'I', '20', ''),
         ('Prod_Plan', 'КодИзделия', 'product_type_id', 'I', '20', '*'),
-        ('Prod_Plan', 'ПланВыпуска', 'target_quantity', 'I', '20', '')
+        ('Prod_Plan', 'ПланВыпуска', 'target_quantity', 'I', '20', ''),
+        ('Client_Order', 'КодЗаказа', 'id_order', 'I', '20', '*'),
+        ('Client_Order', 'ИмяКлиента', 'customer_name', 'S', '255', ''),
+        ('Client_Order', 'КодИзделия', 'product_type_id', 'I', '20', ''),
+        ('Client_Order', 'Количество', 'quantity', 'I', '20', ''),
+        ('Client_Order', 'Дата заказа', 'order_date', 'S', '50', ''),
+        ('Client_Order', 'Статус', 'status', 'S', '50', '')
     ]
 
     for item in fields_data:
@@ -345,12 +382,16 @@ def build_docx():
         cell.paragraphs[0].runs[0].font.size = Pt(11)
 
     tables_desc = [
-        ('part', 'Справочник комплектующих деталей с артикулами'),
+        ('part_category', 'Справочник категорий комплектующих деталей (например, Процессоры, Корпуса)'),
+        ('part', 'Справочник деталей с артикулами и привязкой к категориям'),
+        ('supplier', 'Справочник поставщиков деталей'),
+        ('part_supply', 'Регистрационный журнал поставок деталей (цена, количество, дата)'),
         ('product_type', 'Справочник выпускаемых готовых изделий'),
-        ('product_composition', 'Спецификации состава готовой продукции (расход деталей)'),
+        ('product_composition', 'Спецификации состава готовой продукции (расход деталей на единицу изделия)'),
         ('part_warehouse_cell', 'Ячейки адресного хранения деталей на складе комплектующих'),
-        ('product_warehouse_cell', 'Ячейки адресного хранения готовых изделий на складе продукции'),
-        ('production_plan', 'Целевые показатели плана выпуска готовой продукции')
+        ('product_warehouse_cell', 'Ячейки адресного хранения готовых изделий на складе готовой продукции'),
+        ('production_plan', 'Целевые показатели плана выпуска готовой продукции'),
+        ('client_order', 'Журнал заказов клиентов на сборку готовой продукции с отслеживанием статусов')
     ]
     
     for t_name, t_desc in tables_desc:
@@ -375,7 +416,7 @@ def build_docx():
     # ================= 6. РЕАЛИЗАЦИЯ БАЗЫ ДАННЫХ =================
     add_chapter("6. Реализация базы данных")
     doc.add_paragraph(
-        "Разработка базы данных выполнена в реляционной СУБД SQLite. База данных содержит 6 таблиц. "
+        "Разработка базы данных выполнена в реляционной СУБД SQLite. База данных содержит 10 таблиц. "
         "Связи контролируются внешними ключами с каскадным удалением."
     )
     
@@ -385,20 +426,41 @@ def build_docx():
     )
     
     sql_script = (
+        "CREATE TABLE part_category (\n"
+        "    id_category INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+        "    name TEXT NOT NULL UNIQUE\n"
+        ");\n\n"
         "CREATE TABLE part (\n"
         "    id_part INTEGER PRIMARY KEY AUTOINCREMENT,\n"
         "    name TEXT NOT NULL,\n"
-        "    article TEXT NOT NULL\n"
+        "    article TEXT NOT NULL UNIQUE,\n"
+        "    category_id INTEGER,\n"
+        "    FOREIGN KEY (category_id) REFERENCES part_category (id_category) ON DELETE SET NULL\n"
+        ");\n\n"
+        "CREATE TABLE supplier (\n"
+        "    id_supplier INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+        "    name TEXT NOT NULL UNIQUE,\n"
+        "    contact_info TEXT\n"
+        ");\n\n"
+        "CREATE TABLE part_supply (\n"
+        "    id_supply INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+        "    supplier_id INTEGER,\n"
+        "    part_id INTEGER,\n"
+        "    quantity INTEGER NOT NULL,\n"
+        "    price REAL NOT NULL,\n"
+        "    supply_date TEXT NOT NULL,\n"
+        "    FOREIGN KEY (supplier_id) REFERENCES supplier (id_supplier) ON DELETE CASCADE,\n"
+        "    FOREIGN KEY (part_id) REFERENCES part (id_part) ON DELETE CASCADE\n"
         ");\n\n"
         "CREATE TABLE product_type (\n"
         "    id_product_type INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-        "    name TEXT NOT NULL,\n"
+        "    name TEXT NOT NULL UNIQUE,\n"
         "    description TEXT\n"
         ");\n\n"
         "CREATE TABLE product_composition (\n"
         "    product_type_id INTEGER,\n"
         "    part_id INTEGER,\n"
-        "    quantity INTEGER,\n"
+        "    quantity INTEGER NOT NULL,\n"
         "    PRIMARY KEY (product_type_id, part_id),\n"
         "    FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE,\n"
         "    FOREIGN KEY (part_id) REFERENCES part (id_part) ON DELETE CASCADE\n"
@@ -408,7 +470,30 @@ def build_docx():
         "    cell_number TEXT NOT NULL,\n"
         "    part_id INTEGER,\n"
         "    quantity_stored INTEGER DEFAULT 0,\n"
-        "    FOREIGN KEY (part_id) REFERENCES part (id_part) ON DELETE CASCADE\n"
+        "    FOREIGN KEY (part_id) REFERENCES part (id_part) ON DELETE CASCADE,\n"
+        "    UNIQUE(cell_number, part_id)\n"
+        ");\n\n"
+        "CREATE TABLE product_warehouse_cell (\n"
+        "    id_product_cell INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+        "    cell_number TEXT NOT NULL,\n"
+        "    product_type_id INTEGER,\n"
+        "    quantity_stored INTEGER DEFAULT 0,\n"
+        "    FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE,\n"
+        "    UNIQUE(cell_number, product_type_id)\n"
+        ");\n\n"
+        "CREATE TABLE production_plan (\n"
+        "    product_type_id INTEGER PRIMARY KEY,\n"
+        "    target_quantity INTEGER DEFAULT 0,\n"
+        "    FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE\n"
+        ");\n\n"
+        "CREATE TABLE client_order (\n"
+        "    id_order INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+        "    customer_name TEXT NOT NULL,\n"
+        "    product_type_id INTEGER,\n"
+        "    quantity INTEGER NOT NULL,\n"
+        "    order_date TEXT NOT NULL,\n"
+        "    status TEXT DEFAULT 'В обработке',\n"
+        "    FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE\n"
         ");"
     )
     
