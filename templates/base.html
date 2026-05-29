@@ -259,6 +259,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-4">
+                    {% if session.get('role') == 'worker' %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
                             <i class="bi bi-speedometer2 me-1"></i> Панель
@@ -298,11 +299,43 @@
                             <i class="bi bi-info-circle me-1"></i> Справки
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/orders' %}active{% endif %}" href="/orders">
+                            <i class="bi bi-cart-check me-1"></i> Заказы клиентов
+                        </a>
+                    </li>
+                    {% elif session.get('role') == 'client' %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                            <i class="bi bi-laptop me-1"></i> Каталог и Заказы
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
-                <div class="d-flex mt-2 mt-xl-0">
-                    <a href="/export" class="btn btn-outline-light btn-sm rounded-pill px-3 shadow-sm d-inline-flex align-items-center">
-                        <i class="bi bi-file-earmark-arrow-down me-1"></i> Экспорт остатков CSV
-                    </a>
+                
+                <div class="d-flex align-items-center gap-3 mt-2 mt-xl-0">
+                    {% if session.get('user_id') %}
+                        <span class="text-light small d-none d-lg-inline">
+                            <i class="bi bi-person-circle me-1 text-info"></i>
+                            <strong>{{ session.get('username') }}</strong> 
+                            ({% if session.get('role') == 'worker' %}Работник цеха{% else %}Клиент{% endif %})
+                        </span>
+                        {% if session.get('role') == 'worker' %}
+                        <a href="/export" class="btn btn-outline-light btn-sm rounded-pill px-3 shadow-sm d-inline-flex align-items-center me-1">
+                            <i class="bi bi-file-earmark-arrow-down me-1"></i> Экспорт остатков
+                        </a>
+                        {% endif %}
+                        <a href="/logout" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                            <i class="bi bi-box-arrow-right me-1"></i> Выйти
+                        </a>
+                    {% else %}
+                        <a href="/login" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Войти
+                        </a>
+                        <a href="/register" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                            Регистрация
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -327,7 +360,7 @@
     <footer class="text-center">
         <div class="container">
             <p class="mb-1">&copy; 2026 ООО «ТехноПромСборка». Все права защищены.</p>
-            <p class="mb-0 text-muted" style="font-size: 0.8rem;">Система учета и автоматизации сборочного производства на базе SQLite (5 таблиц ТЗ).</p>
+            <p class="mb-0 text-muted" style="font-size: 0.8rem;">Система учета и автоматизации сборочного производства на базе SQLite (Авторизация и роли).</p>
         </div>
     </footer>
 

@@ -1,9 +1,12 @@
 import sqlite3
+from werkzeug.security import generate_password_hash
 
 connection = sqlite3.connect('database.db')
 cursor = connection.cursor()
 
 cursor.executescript('''
+    DROP TABLE IF EXISTS client_order;
+    DROP TABLE IF EXISTS user;
     DROP TABLE IF EXISTS product_composition;
     DROP TABLE IF EXISTS part_warehouse_cell;
     DROP TABLE IF EXISTS product_warehouse_cell;
@@ -53,9 +56,36 @@ cursor.executescript('''
         FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE,
         UNIQUE(cell_number, product_type_id)
     );
+
+    -- 6. Пользователи (Авторизация)
+    CREATE TABLE user (
+        id_user INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('worker', 'client'))
+    );
+
+    -- 7. Заказы клиентов
+    CREATE TABLE client_order (
+        id_order INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        product_type_id INTEGER,
+        quantity INTEGER NOT NULL,
+        order_date TEXT NOT NULL,
+        status TEXT DEFAULT 'В обработке',
+        FOREIGN KEY (user_id) REFERENCES user (id_user) ON DELETE CASCADE,
+        FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE
+    );
 ''')
 
-# Наполнение расширенными тестовыми данными
+# Хешируем дефолтные пароли для демо-пользователей
+worker_hash = generate_password_hash('admin')
+client_hash = generate_password_hash('client')
+
+# Наполнение тестовыми данными
+cursor.execute('INSERT INTO user (username, password_hash, role) VALUES (?, ?, ?)', ('admin', worker_hash, 'worker'))
+cursor.execute('INSERT INTO user (username, password_hash, role) VALUES (?, ?, ?)', ('client', client_hash, 'client'))
+
 cursor.executescript('''
     -- 1. Детали (16 штук)
     INSERT INTO part (id_part, name, article) VALUES 
@@ -85,59 +115,61 @@ cursor.executescript('''
     (5, 'Компактный Неттоп Nano', 'Ультракомпактное решение для медиацентров и тонких клиентов');
     
     -- 3. Составы изделий (спецификации)
-    -- ПК Офисный: i5-12400 (1), ASUS B660M (1), RAM 8GB DDR4 (1), SSD 1TB (1), BQ 600W (1), Deepcool Case (1)
+    -- ПК Офисный
     INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
     (1, 1, 1), (1, 5, 1), (1, 8, 1), (1, 12, 1), (1, 13, 1), (1, 15, 1);
     
-    -- ПК Игровой Advance: Ryzen 5 (1), Gigabyte B550 (1), RAM 8GB DDR4 (2), RTX 4060 (1), SSD 1TB (1), BQ 600W (1), Deepcool Case (1)
+    -- ПК Игровой Advance
     INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
     (2, 2, 1), (2, 6, 1), (2, 8, 2), (2, 10, 1), (2, 12, 1), (2, 13, 1), (2, 15, 1);
     
-    -- ПК Игровой Extreme Ultra: i7-13700K (1), MSI Z790 (1), RAM 16GB DDR5 (2), RTX 4080 (1), SSD 1TB (2), Corsair 850W (1), Fractal Case (1)
+    -- ПК Игровой Extreme Ultra
     INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
     (3, 3, 1), (3, 7, 1), (3, 9, 2), (3, 11, 1), (3, 12, 2), (3, 14, 1), (3, 16, 1);
     
-    -- Сервер начального уровня Pro: Ryzen 9 (1), Gigabyte B550 (1), RAM 16GB DDR5 (4), SSD 1TB (4), Corsair 850W (1), Fractal Case (1)
+    -- Сервер начального уровня Pro
     INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
     (4, 4, 1), (4, 6, 1), (4, 9, 4), (4, 12, 4), (4, 14, 1), (4, 16, 1);
     
-    -- Компактный Неттоп Nano: i5-12400 (1), ASUS B660M (1), RAM 8GB DDR4 (1), SSD 1TB (1)
+    -- Компактный Неттоп Nano
     INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
     (5, 1, 1), (5, 5, 1), (5, 8, 1), (5, 12, 1);
     
     -- 4. Ячейки склада деталей (адресное хранение)
     INSERT INTO part_warehouse_cell (cell_number, part_id, quantity_stored) VALUES 
-    ('A-101', 1, 24), -- i5
-    ('A-102', 2, 18), -- Ryzen 5
-    ('A-103', 3, 8),  -- i7
-    ('A-104', 4, 5),  -- Ryzen 9
-    ('A-105', 5, 15), -- ASUS B660
-    ('A-106', 6, 12), -- Gigabyte B550
-    ('A-107', 7, 6),  -- MSI Z790
-    ('A-108', 8, 48), -- RAM DDR4
-    ('A-109', 9, 32), -- RAM DDR5
-    ('A-110', 10, 10), -- RTX 4060
-    ('A-111', 11, 4),  -- RTX 4080
-    ('A-112', 12, 50), -- SSD 1TB
-    ('A-113', 13, 20), -- BQ 600W
-    ('A-114', 14, 12), -- Corsair 850W
-    ('A-115', 15, 15), -- Deepcool Case
-    ('A-116', 16, 8);  -- Fractal Case
-    
-    -- Дополнительные ячейки для дублирования деталей
-    INSERT INTO part_warehouse_cell (cell_number, part_id, quantity_stored) VALUES 
-    ('A-201', 1, 10), -- i5 дополнительно
-    ('A-208', 8, 20); -- RAM DDR4 дополнительно
+    ('A-101', 1, 24),
+    ('A-102', 2, 18),
+    ('A-103', 3, 8),
+    ('A-104', 4, 5),
+    ('A-105', 5, 15),
+    ('A-106', 6, 12),
+    ('A-107', 7, 6),
+    ('A-108', 8, 48),
+    ('A-109', 9, 32),
+    ('A-110', 10, 10),
+    ('A-111', 11, 4),
+    ('A-112', 12, 50),
+    ('A-113', 13, 20),
+    ('A-114', 14, 12),
+    ('A-115', 15, 15),
+    ('A-116', 16, 8),
+    ('A-201', 1, 10),
+    ('A-208', 8, 20);
     
     -- 5. Ячейки склада готовых изделий
     INSERT INTO product_warehouse_cell (cell_number, product_type_id, quantity_stored) VALUES 
-    ('B-201', 1, 5),  -- ПК Офисный
-    ('B-202', 2, 3),  -- ПК Игровой Advance
-    ('B-203', 3, 1),  -- ПК Игровой Extreme Ultra
-    ('B-204', 4, 0),  -- Сервер (Пусто)
-    ('B-205', 5, 2);  -- Неттоп
+    ('B-201', 1, 5),
+    ('B-202', 2, 3),
+    ('B-203', 3, 1),
+    ('B-204', 4, 0),
+    ('B-205', 5, 2);
+
+    -- 7. Заказы клиентов (тестовые)
+    INSERT INTO client_order (user_id, product_type_id, quantity, order_date, status) VALUES
+    (2, 1, 2, '2026-05-29', 'В обработке'),
+    (2, 2, 1, '2026-05-29', 'Собран');
 ''')
 
 connection.commit()
 connection.close()
-print("База данных инициализирована расширенным набором данных (16 деталей, 5 изделий, спецификации и ячейки).")
+print("База данных на dev-branch инициализирована (7 таблиц с пользователями и заказами).")

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold mb-1"><i class="bi bi-laptop text-primary"></i> Панель клиента</h3>
+        <p class="text-muted mb-0">Добро пожаловать в личный кабинет, <strong>{{ session.get('username') }}</strong>. Здесь вы можете заказать готовую продукцию цеха.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Левая колонка: Каталог готовых изделий -->
+    <div class="col-lg-7 col-md-12">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-info"></i>Каталог готовой продукции</h5>
+            </div>
+            <div class="card-body p-4 bg-light">
+                <div class="row g-3">
+                    {% for p in products %}
+                    <div class="col-12">
+                        <div class="bg-white p-3 rounded-3 border shadow-xs d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div>
+                                <h6 class="fw-bold mb-1 text-dark">{{ p.name }}</h6>
+                                <p class="text-muted small mb-0">{{ p.description or 'Описание отсутствует.' }}</p>
+                            </div>
+                            <div style="min-width: 200px;">
+                                <form action="/client_order" method="POST" class="d-flex gap-2 align-items-center">
+                                    <input type="hidden" name="product_type_id" value="{{ p.id_product_type }}">
+                                    <div class="input-group input-group-sm" style="width: 100px;">
+                                        <input type="number" name="quantity" class="form-control" value="1" min="1" required>
+                                        <span class="input-group-text">шт.</span>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary flex-grow-1"><i class="bi bi-cart-plus"></i> Заказать</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12 text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                        Нет доступных изделий в каталоге.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Правая колонка: История моих заказов -->
+    <div class="col-lg-5 col-md-12">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-journal-text me-2 text-info"></i>Мои заказы</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 45%">Изделие</th>
+                                <th style="width: 20%">Кол-во</th>
+                                <th style="width: 35%">Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>
+                                    <strong class="text-dark">{{ order.product_name }}</strong>
+                                    <div class="text-muted small">Дата: {{ order.order_date }}</div>
+                                </td>
+                                <td><span class="badge-custom bg-light border text-dark">{{ order.quantity }} шт.</span></td>
+                                <td>
+                                    {% if order.status == 'В обработке' %}
+                                    <span class="badge-custom badge-warning"><i class="bi bi-clock-history me-1"></i>В обработке</span>
+                                    {% else %}
+                                    <span class="badge-custom badge-success"><i class="bi bi-check-circle-fill me-1"></i>Собран</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center py-5 text-muted">
+                                    <i class="bi bi-cart fs-2 mb-2 d-block"></i>
+                                    Вы еще не делали заказов.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

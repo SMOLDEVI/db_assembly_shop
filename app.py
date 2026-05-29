@@ -2,21 +2,37 @@ from flask import Flask, render_template, request, redirect, url_for, flash, Res
 import sqlite3
 import csv
 import io
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key' # Обязательно для работы flash-уведомлений и сохранения плана в сессии
+app.secret_key = 'super_secret_key' # Обязательно для работы сессий и flash-уведомлений
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
 
+# Декоратор для ограничения доступа по авторизации и ролям
+def login_required(role=None):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'user_id' not in session:
+                flash('Для доступа к этой странице необходимо войти в систему.', 'warning')
+                return redirect(url_for('login'))
+            if role and session.get('role') != role:
+                flash('У вас нет прав для доступа к этой странице.', 'danger')
+                return redirect(url_for('index'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 # Помощник для получения плана из сессии или создания дефолтного плана
 def get_production_plans(conn):
     if 'production_plans' not in session or not session['production_plans']:
         products = conn.execute('SELECT id_product_type FROM product_type').fetchall()
         default_plans = {}
-        # Задаем дефолтные объемы выпуска для расчета дефицита
         defaults = {1: 10, 2: 5, 3: 2, 4: 1, 5: 3}
         for p in products:
             p_id = p['id_product_type']
@@ -25,11 +41,88 @@ def get_production_plans(conn):
         session.modified = True
     return session['production_plans']
 
-# ================= 1. ГЛАВНАЯ (ДАШБОРД С ДИАГРАММОЙ) =================
+# ================= АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ =================
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
+        
+        conn = get_db_connection()
+        user = conn.execute('SELECT * FROM user WHERE username = ?', (username,)).fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id_user']
+            session['username'] = user['username']
+            session['role'] = user['role']
+            flash(f'Добро пожаловать, {user["username"]}!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Неверное имя пользователя или пароль!', 'danger')
+            
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
+        role = request.form['role'].strip()
+        
+        if not username or not password or role not in ['worker', 'client']:
+            flash('Заполните все поля корректно!', 'danger')
+        else:
+            conn = get_db_connection()
+            existing = conn.execute('SELECT id_user FROM user WHERE username = ?', (username,)).fetchone()
+            if existing:
+                flash('Пользователь с таким именем уже существует!', 'danger')
+                conn.close()
+            else:
+                pw_hash = generate_password_hash(password)
+                conn.execute('INSERT INTO user (username, password_hash, role) VALUES (?, ?, ?)', 
+                             (username, pw_hash, role))
+                conn.commit()
+                conn.close()
+                flash('Регистрация прошла успешно! Теперь вы можете войти в систему.', 'success')
+                return redirect(url_for('login'))
+                
+    return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Вы успешно вышли из системы.', 'info')
+    return redirect(url_for('login'))
+
+# ================= 1. ГЛАВНАЯ (ПАНЕЛЬ ДЛЯ РАБОТНИКА / КАТАЛОГ ДЛЯ КЛИЕНТА) =================
 @app.route('/')
+@login_required()
 def index():
+    # Если зашел Клиент — показываем ему каталог и его заказы
+    if session.get('role') == 'client':
+        conn = get_db_connection()
+        products = conn.execute('SELECT * FROM product_type').fetchall()
+        
+        # Получаем заказы конкретного пользователя
+        my_orders = conn.execute('''
+            SELECT co.*, pt.name as product_name
+            FROM client_order co
+            JOIN product_type pt ON co.product_type_id = pt.id_product_type
+            WHERE co.user_id = ?
+            ORDER BY co.id_order DESC
+        ''', (session['user_id'],)).fetchall()
+        conn.close()
+        return render_template('client_dashboard.html', products=products, orders=my_orders)
+        
+    # Если зашел Работник — показываем стандартный аналитический дашборд
     conn = get_db_connection()
-    # Собираем данные для графика: название изделия и общее количество на всех ячейках
     items = conn.execute('''
         SELECT pt.name, SUM(pwc.quantity_stored) as total 
         FROM product_warehouse_cell pwc
@@ -37,7 +130,6 @@ def index():
         GROUP BY pt.id_product_type HAVING total > 0
     ''').fetchall()
     
-    # Расчет дефицита деталей для статистики дашборда на основе плана
     products = conn.execute('SELECT * FROM product_type').fetchall()
     plans = get_production_plans(conn)
     deficit_count = 0
@@ -72,8 +164,34 @@ def index():
     data = [item['total'] for item in items]
     return render_template('index.html', labels=labels, data=data, stats=stats)
 
+# ================= КЛИЕНТСКИЙ ФУНКЦИОНАЛ: ОФОРМЛЕНИЕ ЗАКАЗА =================
+@app.route('/client_order', methods=['POST'])
+@login_required('client')
+def place_client_order():
+    product_type_id = int(request.form['product_type_id'])
+    quantity = int(request.form['quantity'])
+    
+    if quantity <= 0:
+        flash('Количество должно быть больше нуля!', 'danger')
+        return redirect(url_for('index'))
+        
+    import datetime
+    today = datetime.date.today().strftime('%Y-%m-%d')
+    
+    conn = get_db_connection()
+    conn.execute('''
+        INSERT INTO client_order (user_id, product_type_id, quantity, order_date, status)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (session['user_id'], product_type_id, quantity, today, 'В обработке'))
+    conn.commit()
+    conn.close()
+    
+    flash('Заказ успешно оформлен и передан в обработку цеха!', 'success')
+    return redirect(url_for('index'))
+
 # ================= 2. АВТОМАТИЗАЦИЯ: СБОРКА ИЗДЕЛИЯ =================
 @app.route('/assemble', methods=['GET', 'POST'])
+@login_required('worker')
 def assemble():
     conn = get_db_connection()
     if request.method == 'POST':
@@ -145,9 +263,9 @@ def assemble():
 
 # ================= 3. ЭКСПОРТ CSV (Остатки на складах) =================
 @app.route('/export')
+@login_required('worker')
 def export():
     conn = get_db_connection()
-    # Выгружаем список деталей и их остатки
     data = conn.execute('''
         SELECT p.name, p.article, SUM(c.quantity_stored) as total 
         FROM part p 
@@ -157,7 +275,7 @@ def export():
     conn.close()
 
     si = io.StringIO()
-    si.write('\ufeff') # Добавляем BOM для Excel
+    si.write('\ufeff')
     cw = csv.writer(si)
     cw.writerow(['Название детали', 'Артикул', 'Остаток на складе (шт)'])
     for row in data:
@@ -170,10 +288,10 @@ def export():
 
 # ================= 4. ВЕДОМОСТЬ ДЕФИЦИТА ПОД МЕСЯЧНЫЙ ПЛАН =================
 @app.route('/reports', methods=['GET', 'POST'])
+@login_required('worker')
 def reports():
     conn = get_db_connection()
     products = conn.execute('SELECT * FROM product_type').fetchall()
-    
     plans = get_production_plans(conn)
     
     if request.method == 'POST':
@@ -190,7 +308,6 @@ def reports():
         flash('Месячный план производства успешно обновлен!', 'success')
         return redirect(url_for('reports'))
 
-    # Вычисляем дефицит
     parts = conn.execute('SELECT * FROM part').fetchall()
     missing_data = []
     
@@ -231,6 +348,7 @@ def reports():
     return render_template('reports.html', plans=plans_list, missing_data=missing_data)
 
 @app.route('/export_csv')
+@login_required('worker')
 def export_csv():
     conn = get_db_connection()
     products = conn.execute('SELECT * FROM product_type').fetchall()
@@ -265,7 +383,7 @@ def export_csv():
     conn.close()
     
     si = io.StringIO()
-    si.write('\ufeff') # BOM для Excel
+    si.write('\ufeff')
     cw = csv.writer(si)
     cw.writerow(['Деталь', 'Артикул', 'Необходимо по программе', 'Есть на складе', 'Требуется заказать (Дефицит)'])
     for row in missing_data:
@@ -278,6 +396,7 @@ def export_csv():
 
 # ================= 5. СПРАВОЧНИК: ДЕТАЛИ =================
 @app.route('/parts', methods=['GET', 'POST'])
+@login_required('worker')
 def parts():
     conn = get_db_connection()
     if request.method == 'POST':
@@ -299,6 +418,7 @@ def parts():
     return render_template('parts.html', data=data)
 
 @app.route('/delete_part/<int:id>')
+@login_required('worker')
 def delete_part(id):
     conn = get_db_connection()
     try:
@@ -312,6 +432,7 @@ def delete_part(id):
 
 # ================= 6. СПРАВОЧНИК: ТИПЫ ИЗДЕЛИЙ =================
 @app.route('/products', methods=['GET', 'POST'])
+@login_required('worker')
 def products():
     conn = get_db_connection()
     if request.method == 'POST':
@@ -333,6 +454,7 @@ def products():
     return render_template('products.html', data=data)
 
 @app.route('/delete_product/<int:id>')
+@login_required('worker')
 def delete_product(id):
     conn = get_db_connection()
     try:
@@ -346,6 +468,7 @@ def delete_product(id):
 
 # ================= 7. СПРАВОЧНИК: СПЕЦИФИКАЦИИ (СОСТАВ) =================
 @app.route('/compositions', methods=['GET', 'POST'])
+@login_required('worker')
 def compositions():
     conn = get_db_connection()
     if request.method == 'POST':
@@ -362,7 +485,6 @@ def compositions():
                 conn.commit()
                 flash('Связь (состав изделия) успешно добавлена!', 'success')
             except sqlite3.IntegrityError:
-                # Если уже есть, обновим количество
                 conn.execute('UPDATE product_composition SET quantity = ? WHERE product_type_id = ? AND part_id = ?', 
                              (quantity, product_type_id, part_id))
                 conn.commit()
@@ -382,6 +504,7 @@ def compositions():
     return render_template('compositions.html', data=data, products=products_list, parts=parts_list)
 
 @app.route('/delete_composition/<int:prod_id>/<int:part_id>')
+@login_required('worker')
 def delete_composition(prod_id, part_id):
     conn = get_db_connection()
     conn.execute('DELETE FROM product_composition WHERE product_type_id = ? AND part_id = ?', (prod_id, part_id))
@@ -392,14 +515,14 @@ def delete_composition(prod_id, part_id):
 
 # ================= 8. УЧЕТ СКЛАДА ДЕТАЛЕЙ =================
 @app.route('/part_cells', methods=['GET', 'POST'])
+@login_required('worker')
 def part_cells():
     conn = get_db_connection()
     
-    # Обработка POST-запросов (прием деталей / отпуск деталей)
     if request.method == 'POST':
         action = request.form.get('action')
         
-        if action == 'receive':  # Прием деталей
+        if action == 'receive':
             cell_number = request.form['cell_number'].strip().upper()
             part_id = int(request.form['part_id'])
             qty = int(request.form['quantity'])
@@ -407,7 +530,6 @@ def part_cells():
             if not cell_number or qty <= 0:
                 flash('Неверно заполнены данные приема!', 'danger')
             else:
-                # Проверим, не специализируется ли ячейка на другой детали
                 other_part = conn.execute('SELECT part_id FROM part_warehouse_cell WHERE cell_number = ? AND part_id != ?', (cell_number, part_id)).fetchone()
                 if other_part:
                     other_name = conn.execute('SELECT name FROM part WHERE id_part = ?', (other_part['part_id'],)).fetchone()['name']
@@ -421,7 +543,7 @@ def part_cells():
                     conn.commit()
                     flash(f'Детали успешно приняты в ячейку {cell_number}!', 'success')
                     
-        elif action == 'issue':  # Отпуск деталей со склада
+        elif action == 'issue':
             cell_id = int(request.form['cell_id'])
             qty = int(request.form['quantity'])
             
@@ -449,6 +571,7 @@ def part_cells():
     return render_template('part_cells.html', data=data, parts=parts_list)
 
 @app.route('/delete_part_cell/<int:id>')
+@login_required('worker')
 def delete_part_cell(id):
     conn = get_db_connection()
     conn.execute('DELETE FROM part_warehouse_cell WHERE id_part_cell = ?', (id,))
@@ -459,13 +582,14 @@ def delete_part_cell(id):
 
 # ================= 9. УЧЕТ СКЛАДА ГОТОВЫХ ИЗДЕЛИЙ =================
 @app.route('/product_cells', methods=['GET', 'POST'])
+@login_required('worker')
 def product_cells():
     conn = get_db_connection()
     
     if request.method == 'POST':
         action = request.form.get('action')
         
-        if action == 'receive':  # Прием изделий
+        if action == 'receive':
             cell_number = request.form['cell_number'].strip().upper()
             product_type_id = int(request.form['product_type_id'])
             qty = int(request.form['quantity'])
@@ -473,7 +597,6 @@ def product_cells():
             if not cell_number or qty <= 0:
                 flash('Неверно заполнены данные приема!', 'danger')
             else:
-                # Проверим, не специализируется ли ячейка на другом типе изделия
                 other_prod = conn.execute('SELECT product_type_id FROM product_warehouse_cell WHERE cell_number = ? AND product_type_id != ?', (cell_number, product_type_id)).fetchone()
                 if other_prod:
                     other_name = conn.execute('SELECT name FROM product_type WHERE id_product_type = ?', (other_prod['product_type_id'],)).fetchone()['name']
@@ -487,7 +610,7 @@ def product_cells():
                     conn.commit()
                     flash(f'Готовые изделия успешно приняты в ячейку {cell_number}!', 'success')
                     
-        elif action == 'issue':  # Отпуск готовых изделий
+        elif action == 'issue':
             cell_id = int(request.form['cell_id'])
             qty = int(request.form['quantity'])
             
@@ -515,6 +638,7 @@ def product_cells():
     return render_template('product_cells.html', data=data, products=products_list)
 
 @app.route('/delete_product_cell/<int:id>')
+@login_required('worker')
 def delete_product_cell(id):
     conn = get_db_connection()
     conn.execute('DELETE FROM product_warehouse_cell WHERE id_product_cell = ?', (id,))
@@ -525,11 +649,11 @@ def delete_product_cell(id):
 
 # ================= 10. ПОЛУЧЕНИЕ СПРАВОК (ОТЧЕТЫ И ИНФОРМАЦИЯ) =================
 @app.route('/info', methods=['GET', 'POST'])
+@login_required('worker')
 def info():
     conn = get_db_connection()
     products = conn.execute('SELECT * FROM product_type').fetchall()
     
-    # 1. Справка о наличии деталей на складе (сводный остаток)
     parts_stock = conn.execute('''
         SELECT p.name, p.article, pwc.cell_number, pwc.quantity_stored
         FROM part_warehouse_cell pwc
@@ -538,7 +662,6 @@ def info():
         ORDER BY p.name ASC, pwc.cell_number ASC
     ''').fetchall()
     
-    # 2. Справка о наличии готовых изделий (сводный остаток)
     products_stock = conn.execute('''
         SELECT pt.name, pwc.cell_number, pwc.quantity_stored
         FROM product_warehouse_cell pwc
@@ -547,7 +670,6 @@ def info():
         ORDER BY pt.name ASC, pwc.cell_number ASC
     ''').fetchall()
 
-    # 3. Расчет комплектующих и дефицита для сборки нескольких изделий
     calc_results = None
     selected_product = None
     qty_calc = 0
@@ -558,7 +680,6 @@ def info():
         
         selected_product = conn.execute('SELECT * FROM product_type WHERE id_product_type = ?', (prod_id,)).fetchone()
         
-        # Получаем спецификацию состава
         composition = conn.execute('''
             SELECT pc.part_id, p.name, p.article, pc.quantity
             FROM product_composition pc
@@ -589,6 +710,80 @@ def info():
                            calc_results=calc_results, 
                            selected_product=selected_product, 
                            qty_calc=qty_calc)
+
+# ================= 11. ЗАКАЗЫ КЛИЕНТОВ (ДЛЯ РАБОТНИКА) =================
+@app.route('/orders')
+@login_required('worker')
+def orders():
+    conn = get_db_connection()
+    orders_list = conn.execute('''
+        SELECT co.*, pt.name as product_name, u.username as client_name
+        FROM client_order co
+        JOIN product_type pt ON co.product_type_id = pt.id_product_type
+        JOIN user u ON co.user_id = u.id_user
+        ORDER BY co.id_order DESC
+    ''').fetchall()
+    conn.close()
+    return render_template('orders.html', orders=orders_list)
+
+@app.route('/complete_order/<int:id>')
+@login_required('worker')
+def complete_order(id):
+    conn = get_db_connection()
+    order = conn.execute('SELECT * FROM client_order WHERE id_order = ?', (id,)).fetchone()
+    
+    if not order:
+        flash('Заказ не найден!', 'danger')
+        conn.close()
+        return redirect(url_for('orders'))
+        
+    if order['status'] == 'Собран':
+        flash('Заказ уже собран и отгружен!', 'info')
+        conn.close()
+        return redirect(url_for('orders'))
+        
+    product_type_id = order['product_type_id']
+    qty = order['quantity']
+    
+    # Проверяем, сколько готовых изделий есть на складе
+    stock_row = conn.execute('SELECT SUM(quantity_stored) as total FROM product_warehouse_cell WHERE product_type_id = ?', (product_type_id,)).fetchone()
+    in_stock = stock_row['total'] if stock_row['total'] else 0
+    
+    if in_stock >= qty:
+        # Списываем со склада готовых изделий
+        cells = conn.execute('SELECT id_product_cell, quantity_stored FROM product_warehouse_cell WHERE product_type_id = ? AND quantity_stored > 0 ORDER BY id_product_cell ASC', (product_type_id,)).fetchall()
+        needed = qty
+        
+        try:
+            for cell in cells:
+                if needed <= 0:
+                    break
+                take = min(needed, cell['quantity_stored'])
+                conn.execute('UPDATE product_warehouse_cell SET quantity_stored = quantity_stored - ? WHERE id_product_cell = ?', (take, cell['id_product_cell']))
+                needed -= take
+                
+            conn.execute('UPDATE client_order SET status = "Собран" WHERE id_order = ?', (id,))
+            conn.commit()
+            flash('Заказ успешно собран и отгружен со склада готовой продукции!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f'Ошибка при отгрузке заказа: {str(e)}', 'danger')
+    else:
+        product_name = conn.execute('SELECT name FROM product_type WHERE id_product_type = ?', (product_type_id,)).fetchone()['name']
+        flash(f'Ошибка: Недостаточно готовых изделий "{product_name}" на складе готовой продукции! Требуется: {qty}, в наличии: {in_stock}. Перейдите на вкладку Сборка.', 'danger')
+        
+    conn.close()
+    return redirect(url_for('orders'))
+
+@app.route('/delete_order/<int:id>')
+@login_required('worker')
+def delete_order(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM client_order WHERE id_order = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash('Заказ удален.', 'warning')
+    return redirect(url_for('orders'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
