@@ -2,94 +2,175 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="mb-1 text-primary"><i class="bi bi-building-up"></i> Размещение готовой продукции</h3>
-        <p class="text-muted mb-0">Учет ячеек хранения собранных изделий и их текущего объема.</p>
+        <h3 class="fw-bold mb-1"><i class="bi bi-building-up text-primary"></i> Склад готовых изделий</h3>
+        <p class="text-muted mb-0">Адресный учет ячеек хранения готовой продукции и управление их запасами (прием и отпуск).</p>
     </div>
-    <button class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#addProductCellModal" style="width: 50px; height: 50px; font-size: 24px; line-height: 1;">
-        <i class="bi bi-plus"></i>
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#receiveModal">
+            <i class="bi bi-download"></i> Прием изделий
+        </button>
+    </div>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary">
-                    <tr>
-                        <th class="ps-4">ID записи</th>
-                        <th>Номер ячейки</th>
-                        <th>Готовое изделие</th>
-                        <th>Кол-во на складе</th>
-                        <th class="text-end pe-4">Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in data %}
-                    <tr>
-                        <td class="ps-4 text-muted">{{ row.id_product_cell }}</td>
-                        <td><span class="badge bg-dark py-2 px-3 fw-bold"><i class="bi bi-geo-alt"></i> {{ row.cell_number }}</span></td>
-                        <td><strong>{{ row.product_name }}</strong></td>
-                        <td>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 15%">Ячейка</th>
+                    <th style="width: 50%">Готовое изделие</th>
+                    <th style="width: 20%">В наличии</th>
+                    <th style="width: 15%" class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    <td>
+                        <span class="badge-custom bg-dark text-white fw-bold d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-geo-alt-fill text-info"></i> {{ row.cell_number }}
+                        </span>
+                    </td>
+                    <td><strong class="text-dark">{{ row.product_name }}</strong></td>
+                    <td>
+                        {% if row.quantity_stored > 0 %}
+                        <span class="badge-custom badge-success">{{ row.quantity_stored }} шт.</span>
+                        {% else %}
+                        <span class="badge-custom badge-danger">Пусто</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-2">
                             {% if row.quantity_stored > 0 %}
-                            <span class="badge bg-success py-2 px-3">{{ row.quantity_stored }} шт.</span>
-                            {% else %}
-                            <span class="badge bg-danger py-2 px-3">Пусто</span>
+                            <button class="btn btn-sm btn-outline-warning" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#issueModal" 
+                                    data-cell-id="{{ row.id_product_cell }}" 
+                                    data-cell-number="{{ row.cell_number }}" 
+                                    data-product-name="{{ row.product_name }}" 
+                                    data-max-qty="{{ row.quantity_stored }}"
+                                    title="Отпустить готовые изделия">
+                                <i class="bi bi-upload"></i> Отпуск
+                            </button>
                             {% endif %}
-                        </td>
-                        <td class="text-end pe-4">
-                            <a href="/delete_product_cell/{{ row.id_product_cell }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить эту ячейку хранения?');">
+                            <a href="/delete_product_cell/{{ row.id_product_cell }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить эту ячейку хранения?');" title="Удалить ячейку">
                                 <i class="bi bi-trash"></i>
                             </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">На складе изделий пока ничего не размещено. Нажмите "+", чтобы добавить.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                        Склад готовых изделий пуст. Воспользуйтесь кнопкой «Прием изделий» или соберите изделие.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- Модальное окно -->
-<div class="modal fade" id="addProductCellModal" tabindex="-1">
+<!-- Модальное окно: Прием изделий -->
+<div class="modal fade" id="receiveModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-content border-0 shadow">
             <form method="POST">
-                <div class="modal-header bg-primary text-white border-0 py-3">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Разместить готовые изделия</h5>
+                <input type="hidden" name="action" value="receive">
+                <div class="modal-header bg-success text-white border-0 py-3">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-download me-2"></i>Прием готовых изделий на склад</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body bg-light p-4">
+                <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary">Номер ячейки на складе изделий</label>
-                        <input type="text" name="cell_number" class="form-control" placeholder="Например: B-102" required>
+                        <label class="form-label fw-semibold">Номер ячейки</label>
+                        <input type="text" name="cell_number" class="form-control" placeholder="Например: B-201" required>
+                        <div class="form-text">Если ячейка новая, она будет создана. Одна ячейка может специализироваться только на одном типе изделия.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary">Готовое изделие</label>
+                        <label class="form-label fw-semibold">Готовое изделие</label>
                         <select name="product_type_id" class="form-select" required>
-                            <option value="">Выберите тип изделия...</option>
+                            <option value="">-- Выберите изделие --</option>
                             {% for p in products %}
                             <option value="{{ p.id_product_type }}">{{ p.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary">Количество на складирование</label>
+                        <label class="form-label fw-semibold">Количество к приему</label>
                         <div class="input-group">
-                            <input type="number" name="quantity_stored" class="form-control" value="5" min="0" required>
-                            <span class="input-group-text bg-white">шт.</span>
+                            <input type="number" name="quantity" class="form-control" value="5" min="1" required>
+                            <span class="input-group-text">шт.</span>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-light p-3">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg"></i> Разместить</button>
+                <div class="modal-footer border-0 bg-light py-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Принять изделия</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Модальное окно: Отпуск изделий -->
+<div class="modal fade" id="issueModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form method="POST">
+                <input type="hidden" name="action" value="issue">
+                <input type="hidden" name="cell_id" id="issueCellId">
+                <div class="modal-header bg-warning text-dark border-0 py-3">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-upload me-2"></i>Отпуск готовых изделий со склада</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3 bg-light p-3 rounded-3">
+                        <div class="row g-2">
+                            <div class="col-6"><strong>Ячейка:</strong> <span id="issueCellNumber" class="badge-custom bg-dark text-white"></span></div>
+                            <div class="col-6 text-end"><strong>В наличии:</strong> <span id="issueMaxQty" class="badge-custom badge-primary"></span></div>
+                            <div class="col-12 mt-2"><strong>Изделие:</strong> <div id="issueProductName" class="text-secondary fw-semibold"></div></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Количество к выдаче</label>
+                        <div class="input-group">
+                            <input type="number" name="quantity" id="issueQuantityInput" class="form-control" value="1" min="1" required>
+                            <span class="input-group-text">шт.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light py-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-warning text-dark"><i class="bi bi-check-lg"></i> Отпустить изделия</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const issueModal = document.getElementById('issueModal');
+        if (issueModal) {
+            issueModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const cellId = button.getAttribute('data-cell-id');
+                const cellNumber = button.getAttribute('data-cell-number');
+                const productName = button.getAttribute('data-product-name');
+                const maxQty = button.getAttribute('data-max-qty');
+
+                document.getElementById('issueCellId').value = cellId;
+                document.getElementById('issueCellNumber').textContent = cellNumber;
+                document.getElementById('issueProductName').textContent = productName;
+                document.getElementById('issueMaxQty').textContent = maxQty + ' шт.';
+
+                const qtyInput = document.getElementById('issueQuantityInput');
+                qtyInput.max = maxQty;
+                qtyInput.value = Math.min(5, maxQty);
+            });
+        }
+    });
+</script>
 {% endblock %}

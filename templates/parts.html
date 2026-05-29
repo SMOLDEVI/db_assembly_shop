@@ -1,64 +1,73 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3><i class="bi bi-nut"></i> Справочник: Детали</h3>
-    <!-- Кнопка ПЛЮС в углу -->
-    <button class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#addModal" style="width: 50px; height: 50px; font-size: 24px; line-height: 1;">
-        <i class="bi bi-plus"></i>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-nut text-primary"></i> Номенклатура деталей</h3>
+        <p class="text-muted mb-0">Список всех комплектующих деталей, используемых в производстве.</p>
+    </div>
+    <!-- Кнопка добавления -->
+    <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addModal">
+        <i class="bi bi-plus-lg"></i> Добавить деталь
     </button>
 </div>
 
-<table class="table table-hover align-middle border">
-    <thead class="table-light">
-        <tr><th>ID</th><th>Название</th><th>Артикул</th><th>Категория</th><th class="text-end">Действия</th></tr>
-    </thead>
-    <tbody>
-        {% for row in data %}
-        <tr>
-            <td>{{ row.id_part }}</td>
-            <td><strong>{{ row.name }}</strong></td>
-            <td><span class="badge bg-secondary">{{ row.article }}</span></td>
-            <td>{{ row.category_name if row.category_name else '—' }}</td>
-            <td class="text-end">
-                <!-- Иконка КОРЗИНЫ -->
-                <a href="/delete_part/{{ row.id_part }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?');">
-                    <i class="bi bi-trash"></i>
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 10%">ID</th>
+                    <th style="width: 50%">Название детали</th>
+                    <th style="width: 25%">Артикул</th>
+                    <th style="width: 15%" class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    <td><span class="text-muted">#{{ row.id_part }}</span></td>
+                    <td><strong class="text-dark">{{ row.name }}</strong></td>
+                    <td><span class="badge-custom badge-primary">{{ row.article }}</span></td>
+                    <td class="text-end">
+                        <a href="/delete_part/{{ row.id_part }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Вы уверены, что хотите удалить эту деталь из номенклатуры?');">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                        Номенклатура деталей пуста.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
-<!-- Модальное окно (всплывающая форма добавления) -->
+<!-- Модальное окно добавления -->
 <div class="modal fade" id="addModal" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content">
+    <div class="modal-content border-0 shadow">
       <form method="POST">
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title">Добавить новую деталь</h5>
+          <div class="modal-header bg-dark text-white border-0 py-3">
+            <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Добавить новую деталь</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body p-4">
             <div class="mb-3">
-                <label>Название</label>
-                <input type="text" name="name" class="form-control" required>
+                <label class="form-label fw-semibold">Название детали</label>
+                <input type="text" name="name" class="form-control" placeholder="Например: Intel Core i5-12400" required>
             </div>
             <div class="mb-3">
-                <label>Артикул</label>
-                <input type="text" name="article" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Категория</label>
-                <select name="category_id" class="form-select">
-                    <option value="">-- Без категории --</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id_category }}">{{ cat.name }}</option>
-                    {% endfor %}
-                </select>
+                <label class="form-label fw-semibold">Артикул детали</label>
+                <input type="text" name="article" class="form-control" placeholder="Например: CPU-I5-12" required>
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer border-0 bg-light py-3">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Сохранить</button>
           </div>
       </form>

@@ -4,59 +4,27 @@ connection = sqlite3.connect('database.db')
 cursor = connection.cursor()
 
 cursor.executescript('''
-    DROP TABLE IF EXISTS part_supply;
-    DROP TABLE IF EXISTS client_order;
     DROP TABLE IF EXISTS product_composition;
     DROP TABLE IF EXISTS part_warehouse_cell;
     DROP TABLE IF EXISTS product_warehouse_cell;
     DROP TABLE IF EXISTS part;
-    DROP TABLE IF EXISTS part_category;
     DROP TABLE IF EXISTS product_type;
-    DROP TABLE IF EXISTS production_plan;
-    DROP TABLE IF EXISTS supplier;
 
-    -- 1. Категории деталей
-    CREATE TABLE part_category (
-        id_category INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE
-    );
-
-    -- 2. Детали
+    -- 1. Детали
     CREATE TABLE part (
         id_part INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        article TEXT NOT NULL UNIQUE,
-        category_id INTEGER,
-        FOREIGN KEY (category_id) REFERENCES part_category (id_category) ON DELETE SET NULL
+        article TEXT NOT NULL UNIQUE
     );
 
-    -- 3. Поставщики
-    CREATE TABLE supplier (
-        id_supplier INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        contact_info TEXT
-    );
-
-    -- 4. Поставки деталей (incoming shipments)
-    CREATE TABLE part_supply (
-        id_supply INTEGER PRIMARY KEY AUTOINCREMENT,
-        supplier_id INTEGER,
-        part_id INTEGER,
-        quantity INTEGER NOT NULL,
-        price REAL NOT NULL,
-        supply_date TEXT NOT NULL,
-        FOREIGN KEY (supplier_id) REFERENCES supplier (id_supplier) ON DELETE CASCADE,
-        FOREIGN KEY (part_id) REFERENCES part (id_part) ON DELETE CASCADE
-    );
-
-    -- 5. Типы изделий
+    -- 2. Типы изделий
     CREATE TABLE product_type (
         id_product_type INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         description TEXT
     );
 
-    -- 6. Состав изделия (спецификация)
+    -- 3. Состав изделия (спецификация)
     CREATE TABLE product_composition (
         product_type_id INTEGER,
         part_id INTEGER,
@@ -66,7 +34,7 @@ cursor.executescript('''
         FOREIGN KEY (part_id) REFERENCES part (id_part) ON DELETE CASCADE
     );
 
-    -- 7. Ячейки склада деталей
+    -- 4. Ячейки склада деталей
     CREATE TABLE part_warehouse_cell (
         id_part_cell INTEGER PRIMARY KEY AUTOINCREMENT,
         cell_number TEXT NOT NULL,
@@ -76,7 +44,7 @@ cursor.executescript('''
         UNIQUE(cell_number, part_id)
     );
 
-    -- 8. Ячейки склада изделий
+    -- 5. Ячейки склада готовых изделий
     CREATE TABLE product_warehouse_cell (
         id_product_cell INTEGER PRIMARY KEY AUTOINCREMENT,
         cell_number TEXT NOT NULL,
@@ -85,96 +53,91 @@ cursor.executescript('''
         FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE,
         UNIQUE(cell_number, product_type_id)
     );
-
-    -- 9. План выпуска изделий
-    CREATE TABLE production_plan (
-        product_type_id INTEGER PRIMARY KEY,
-        target_quantity INTEGER DEFAULT 0,
-        FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE
-    );
-
-    -- 10. Заказы клиентов
-    CREATE TABLE client_order (
-        id_order INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_name TEXT NOT NULL,
-        product_type_id INTEGER,
-        quantity INTEGER NOT NULL,
-        order_date TEXT NOT NULL,
-        status TEXT DEFAULT 'В обработке',
-        FOREIGN KEY (product_type_id) REFERENCES product_type (id_product_type) ON DELETE CASCADE
-    );
 ''')
 
-# Наполнение начальными тестовыми данными
+# Наполнение расширенными тестовыми данными
 cursor.executescript('''
-    -- Категории
-    INSERT INTO part_category (name) VALUES ('Процессоры'), ('Корпуса'), ('Материнские платы'), ('Оперативная память'), ('Видеокарты'), ('Блоки питания');
+    -- 1. Детали (16 штук)
+    INSERT INTO part (id_part, name, article) VALUES 
+    (1, 'Intel Core i5-12400', 'CPU-I5-12'),
+    (2, 'AMD Ryzen 5 5600X', 'CPU-R5-56'),
+    (3, 'Intel Core i7-13700K', 'CPU-I7-13'),
+    (4, 'AMD Ryzen 9 7900X', 'CPU-R9-79'),
+    (5, 'ASUS Prime B660M', 'MB-AS-B66'),
+    (6, 'Gigabyte B550M DS3H', 'MB-GB-B55'),
+    (7, 'MSI PRO Z790-A WiFi', 'MB-MS-Z79'),
+    (8, 'Kingston Fury 8GB DDR4', 'RAM-KF-8G'),
+    (9, 'Kingston Fury 16GB DDR5', 'RAM-KF-16G'),
+    (10, 'NVIDIA RTX 4060 8GB', 'GPU-RTX-4060'),
+    (11, 'NVIDIA RTX 4080 16GB', 'GPU-RTX-4080'),
+    (12, 'SSD Samsung 980 Pro 1TB', 'SSD-SM-980'),
+    (13, 'be quiet! System Power 9 600W', 'PSU-BQ-600'),
+    (14, 'Corsair RM850x 850W', 'PSU-CS-850'),
+    (15, 'Deepcool Matrexx 55', 'CASE-DC-55'),
+    (16, 'Fractal Design Meshify 2', 'CASE-FD-M2');
     
-    -- Детали
-    INSERT INTO part (name, article, category_id) VALUES 
-    ('Intel Core i5-12400', 'CPU-I5-12', 1),
-    ('AMD Ryzen 5 5600X', 'CPU-R5-56', 1),
-    ('Deepcool Matrexx 55', 'CASE-DC-55', 2),
-    ('ASUS Prime B660M', 'MB-AS-B66', 3),
-    ('Gigabyte B550M DS3H', 'MB-GB-B55', 3),
-    ('Kingston Fury 8GB DDR4', 'RAM-KF-8G', 4),
-    ('NVIDIA RTX 4060 8GB', 'GPU-RTX-4060', 5),
-    ('be quiet! System Power 9 600W', 'PSU-BQ-600', 6);
+    -- 2. Типы изделий (5 штук)
+    INSERT INTO product_type (id_product_type, name, description) VALUES 
+    (1, 'ПК Офисный Standard', 'Базовый компьютер для офисных и повседневных задач'),
+    (2, 'ПК Игровой Advance', 'Производительный компьютер для современных игр в 1080p'),
+    (3, 'ПК Игровой Extreme Ultra', 'Флагманский геймерский ПК для игр в 4K и работы с графикой'),
+    (4, 'Сервер начального уровня Pro', 'Сервер для малого бизнеса, баз данных и локальных сетей'),
+    (5, 'Компактный Неттоп Nano', 'Ультракомпактное решение для медиацентров и тонких клиентов');
     
-    -- Поставщики
-    INSERT INTO supplier (name, contact_info) VALUES 
-    ('ООО ДИСТРИБЬЮТ-ИТ', 'sales@distribut-it.ru'),
-    ('АО ТЕХНОПОРТ', 'info@technoport.ru');
-    
-    -- Поставки
-    INSERT INTO part_supply (supplier_id, part_id, quantity, price, supply_date) VALUES 
-    (1, 1, 50, 12000.0, '2026-05-15'),
-    (1, 6, 100, 2200.0, '2026-05-15'),
-    (2, 4, 40, 8500.0, '2026-05-18'),
-    (2, 6, 80, 3200.0, '2026-05-18'),
-    (2, 7, 20, 35000.0, '2026-05-20');
-    
-    -- Изделия
-    INSERT INTO product_type (name, description) VALUES 
-    ('ПК Офисный Standard', 'Базовый компьютер для офисных задач'),
-    ('ПК Игровой Advance', 'Производительный ПК для современных игр');
-    
-    -- Спецификации (составы)
-    -- ПК Офисный: i5-12400 (1 шт), ASUS Prime (1 шт), RAM 8GB (1 шт), be quiet 600W (1 шт)
+    -- 3. Составы изделий (спецификации)
+    -- ПК Офисный: i5-12400 (1), ASUS B660M (1), RAM 8GB DDR4 (1), SSD 1TB (1), BQ 600W (1), Deepcool Case (1)
     INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
-    (1, 1, 1), (1, 4, 1), (1, 6, 1), (1, 8, 1);
+    (1, 1, 1), (1, 5, 1), (1, 8, 1), (1, 12, 1), (1, 13, 1), (1, 15, 1);
     
-    -- ПК Игровой: Ryzen 5 (1 шт), Gigabyte B550 (1 шт), RAM 8GB (2 шт), RTX 4060 (1 шт), be quiet 600W (1 шт)
+    -- ПК Игровой Advance: Ryzen 5 (1), Gigabyte B550 (1), RAM 8GB DDR4 (2), RTX 4060 (1), SSD 1TB (1), BQ 600W (1), Deepcool Case (1)
     INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
-    (2, 2, 1), (2, 5, 1), (2, 6, 2), (2, 7, 1), (2, 8, 1);
+    (2, 2, 1), (2, 6, 1), (2, 8, 2), (2, 10, 1), (2, 12, 1), (2, 13, 1), (2, 15, 1);
     
-    -- Ячейки склада деталей
+    -- ПК Игровой Extreme Ultra: i7-13700K (1), MSI Z790 (1), RAM 16GB DDR5 (2), RTX 4080 (1), SSD 1TB (2), Corsair 850W (1), Fractal Case (1)
+    INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
+    (3, 3, 1), (3, 7, 1), (3, 9, 2), (3, 11, 1), (3, 12, 2), (3, 14, 1), (3, 16, 1);
+    
+    -- Сервер начального уровня Pro: Ryzen 9 (1), Gigabyte B550 (1), RAM 16GB DDR5 (4), SSD 1TB (4), Corsair 850W (1), Fractal Case (1)
+    INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
+    (4, 4, 1), (4, 6, 1), (4, 9, 4), (4, 12, 4), (4, 14, 1), (4, 16, 1);
+    
+    -- Компактный Неттоп Nano: i5-12400 (1), ASUS B660M (1), RAM 8GB DDR4 (1), SSD 1TB (1)
+    INSERT INTO product_composition (product_type_id, part_id, quantity) VALUES 
+    (5, 1, 1), (5, 5, 1), (5, 8, 1), (5, 12, 1);
+    
+    -- 4. Ячейки склада деталей (адресное хранение)
     INSERT INTO part_warehouse_cell (cell_number, part_id, quantity_stored) VALUES 
-    ('A-101', 1, 15),
-    ('A-102', 2, 10),
-    ('A-103', 4, 12),
-    ('A-104', 3, 0), 
-    ('A-105', 5, 8),
-    ('A-106', 6, 32),
-    ('A-107', 7, 5),
-    ('A-108', 8, 12);
+    ('A-101', 1, 24), -- i5
+    ('A-102', 2, 18), -- Ryzen 5
+    ('A-103', 3, 8),  -- i7
+    ('A-104', 4, 5),  -- Ryzen 9
+    ('A-105', 5, 15), -- ASUS B660
+    ('A-106', 6, 12), -- Gigabyte B550
+    ('A-107', 7, 6),  -- MSI Z790
+    ('A-108', 8, 48), -- RAM DDR4
+    ('A-109', 9, 32), -- RAM DDR5
+    ('A-110', 10, 10), -- RTX 4060
+    ('A-111', 11, 4),  -- RTX 4080
+    ('A-112', 12, 50), -- SSD 1TB
+    ('A-113', 13, 20), -- BQ 600W
+    ('A-114', 14, 12), -- Corsair 850W
+    ('A-115', 15, 15), -- Deepcool Case
+    ('A-116', 16, 8);  -- Fractal Case
     
-    -- Ячейки склада готовых изделий
+    -- Дополнительные ячейки для дублирования деталей
+    INSERT INTO part_warehouse_cell (cell_number, part_id, quantity_stored) VALUES 
+    ('A-201', 1, 10), -- i5 дополнительно
+    ('A-208', 8, 20); -- RAM DDR4 дополнительно
+    
+    -- 5. Ячейки склада готовых изделий
     INSERT INTO product_warehouse_cell (cell_number, product_type_id, quantity_stored) VALUES 
-    ('B-201', 1, 3),
-    ('B-202', 2, 1);
-    
-    -- Планы выпуска
-    INSERT INTO production_plan (product_type_id, target_quantity) VALUES 
-    (1, 10), (2, 5);
-    
-    -- Заказы клиентов
-    INSERT INTO client_order (customer_name, product_type_id, quantity, order_date, status) VALUES 
-    ('ООО Ромашка', 1, 5, '2026-05-28', 'В обработке'),
-    ('ИП Петров', 2, 2, '2026-05-29', 'В обработке'),
-    ('АО Сокол', 1, 2, '2026-05-29', 'Собран');
+    ('B-201', 1, 5),  -- ПК Офисный
+    ('B-202', 2, 3),  -- ПК Игровой Advance
+    ('B-203', 3, 1),  -- ПК Игровой Extreme Ultra
+    ('B-204', 4, 0),  -- Сервер (Пусто)
+    ('B-205', 5, 2);  -- Неттоп
 ''')
 
 connection.commit()
 connection.close()
-print("База данных расширена до 10 таблиц с более детальной структурой!")
+print("База данных инициализирована расширенным набором данных (16 деталей, 5 изделий, спецификации и ячейки).")

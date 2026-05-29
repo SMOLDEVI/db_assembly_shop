@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold mb-1"><i class="bi bi-info-circle text-primary"></i> Раздел справок и отчетов</h3>
+        <p class="text-muted mb-0">Получение оперативных справок о складских остатках, комплектации изделий и дефиците деталей.</p>
+    </div>
+</div>
+
+<!-- Навигационные вкладки -->
+<ul class="nav nav-pills mb-4 gap-2 bg-light p-2 rounded-3 shadow-sm" id="infoTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link {% if not calc_results %}active{% endif %} d-flex align-items-center gap-2" id="parts-stock-tab" data-bs-toggle="tab" data-bs-target="#parts-stock" type="button" role="tab">
+            <i class="bi bi-nut"></i> Наличие деталей
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="products-stock-tab" data-bs-toggle="tab" data-bs-target="#products-stock" type="button" role="tab">
+            <i class="bi bi-box"></i> Наличие изделий
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link {% if calc_results %}active{% endif %} d-flex align-items-center gap-2" id="calc-tab" data-bs-toggle="tab" data-bs-target="#calc" type="button" role="tab">
+            <i class="bi bi-calculator"></i> Расчет сборки (Дефицит)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="infoTabsContent">
+    <!-- Вкладка 1: Справка о наличии деталей на складе -->
+    <div class="tab-pane fade {% if not calc_results %}show active{% endif %}" id="parts-stock" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-building-down me-2 text-primary"></i>Справка о наличии деталей в ячейках</h5>
+                <span class="badge-custom badge-primary">Всего ячеек: {{ parts_stock|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%">Номер ячейки</th>
+                            <th style="width: 45%">Название комплектующей</th>
+                            <th style="width: 15%">Артикул</th>
+                            <th style="width: 15%">Количество</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in parts_stock %}
+                        <tr>
+                            <td>
+                                <span class="badge-custom bg-dark text-white fw-bold">
+                                    <i class="bi bi-geo-alt-fill text-info"></i> {{ row.cell_number }}
+                                </span>
+                            </td>
+                            <td><strong class="text-dark">{{ row.name }}</strong></td>
+                            <td><span class="badge-custom badge-primary">{{ row.article }}</span></td>
+                            <td><span class="badge-custom badge-success">{{ row.quantity_stored }} шт.</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 mb-2 d-block"></i> На складе деталей пусто.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка 2: Справка о наличии готовых изделий -->
+    <div class="tab-pane fade" id="products-stock" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center py-3">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-building-up me-2 text-primary"></i>Справка о наличии готовых изделий в ячейках</h5>
+                <span class="badge-custom badge-primary">Всего ячеек: {{ products_stock|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%">Номер ячейки</th>
+                            <th style="width: 55%">Тип изделия</th>
+                            <th style="width: 20%">Количество</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in products_stock %}
+                        <tr>
+                            <td>
+                                <span class="badge-custom bg-dark text-white fw-bold">
+                                    <i class="bi bi-geo-alt-fill text-info"></i> {{ row.cell_number }}
+                                </span>
+                            </td>
+                            <td><strong class="text-dark">{{ row.name }}</strong></td>
+                            <td><span class="badge-custom badge-success">{{ row.quantity_stored }} шт.</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 mb-2 d-block"></i> На складе готовых изделий пусто.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Вкладка 3: Справка о комплекте деталей и расчет для сборки -->
+    <div class="tab-pane fade {% if calc_results %}show active{% endif %}" id="calc" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-5 col-md-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-calculator me-2 text-info"></i>Параметры расчета сборки</h5>
+                    </div>
+                    <div class="card-body bg-light p-4">
+                        <form method="POST" action="/info">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Целевое изделие для сборки</label>
+                                <select name="calc_product_id" class="form-select" required>
+                                    <option value="">-- Выберите изделие --</option>
+                                    {% for p in products %}
+                                    <option value="{{ p.id_product_type }}" {% if selected_product and selected_product.id_product_type == p.id_product_type %}selected{% endif %}>{{ p.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Для этого изделия будет загружен комплект необходимых деталей.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Планируемый объем сборки (шт.)</label>
+                                <div class="input-group shadow-sm">
+                                    <input type="number" name="calc_quantity" class="form-control" value="{{ qty_calc if qty_calc > 0 else 1 }}" min="1" required>
+                                    <span class="input-group-text">шт.</span>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mt-2 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-check-circle"></i> Рассчитать дефицит партии
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7 col-md-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="bi bi-list-check me-2"></i>
+                            {% if selected_product %}
+                            Состав и дефицит для {{ qty_calc }} шт. «{{ selected_product.name }}»
+                            {% else %}
+                            Спецификация комплекта деталей
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if calc_results %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 45%">Деталь / Артикул</th>
+                                        <th style="width: 20%">Потребность</th>
+                                        <th style="width: 20%">В наличии</th>
+                                        <th style="width: 15%" class="text-danger">Дефицит</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in calc_results %}
+                                    <tr {% if item.deficit > 0 %}style="background-color: #fef2f2;"{% endif %}>
+                                        <td>
+                                            <strong class="text-dark">{{ item.part_name }}</strong>
+                                            <div class="text-muted small">{{ item.article }}</div>
+                                        </td>
+                                        <td><span class="badge-custom bg-light border text-dark">{{ item.needed }} шт.</span></td>
+                                        <td><span class="badge-custom bg-light border text-dark">{{ item.in_stock }} шт.</span></td>
+                                        <td>
+                                            {% if item.deficit > 0 %}
+                                            <span class="badge-custom badge-danger fw-bold"><i class="bi bi-arrow-down-circle"></i> {{ item.deficit }} шт.</span>
+                                            {% else %}
+                                            <span class="badge-custom badge-success"><i class="bi bi-check-lg"></i> Хватает</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-calculator-fill fs-1 d-block mb-3 opacity-50"></i>
+                            Выберите изделие и укажите количество слева, чтобы получить справку о комплекте деталей и расчете их наличия на складе.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

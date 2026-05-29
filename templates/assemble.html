@@ -2,42 +2,44 @@
 {% block content %}
 <div class="row justify-content-center py-4">
     <div class="col-md-8 col-lg-6">
-        <div class="card border-0 shadow-lg overflow-hidden">
-            <div class="card-header bg-primary text-white border-0 py-3 text-center">
-                <h4 class="mb-0"><i class="bi bi-tools"></i> Консоль автоматической сборки</h4>
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-tools text-warning me-2"></i>Консоль автоматической сборки</h4>
             </div>
-            <div class="card-body bg-light p-4">
-                <div class="alert alert-info border-0 rounded-3 small mb-4" role="alert">
-                    <i class="bi bi-info-circle-fill"></i>
-                    <strong>Как это работает:</strong> Выберите собираемое изделие и количество. Система автоматически сопоставит требования с текущими складскими остатками деталей, спишет детали со склада и оприходует готовые изделия в указанную вами ячейку готовой продукции.
+            <div class="card-body p-4 bg-light">
+                <div class="alert alert-info border-0 shadow-xs mb-4" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Как это работает:</strong> Выберите изделие, количество и ячейку. Система проверит наличие деталей на складе комплектующих по спецификации состава, спишет их с баланса ячеек деталей и примет собранные изделия в указанную ячейку склада готовой продукции.
                 </div>
                 
                 <form method="POST">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary">Готовое изделие</label>
-                        <select name="product_type_id" class="form-select form-select-lg" required>
-                            <option value="">Выберите изделие для сборки...</option>
+                        <label class="form-label fw-semibold">Изделие для сборки</label>
+                        <select name="product_type_id" class="form-select form-select-lg shadow-sm" required>
+                            <option value="">-- Выберите изделие --</option>
                             {% for p in products %}
                                 <option value="{{ p.id_product_type }}">{{ p.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary">Количество к сборке (партия)</label>
-                        <div class="input-group input-group-lg">
+                        <label class="form-label fw-semibold">Количество к сборке (шт.)</label>
+                        <div class="input-group input-group-lg shadow-sm">
                             <input type="number" name="quantity" class="form-control" value="1" min="1" required>
-                            <span class="input-group-text bg-white">шт.</span>
+                            <span class="input-group-text">шт.</span>
                         </div>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label fw-semibold text-secondary">Целевая ячейка на складе изделий</label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text bg-white"><i class="bi bi-geo-alt"></i></span>
-                            <input type="text" name="cell_number" class="form-control" placeholder="Например: B-101" required>
+                        <label class="form-label fw-semibold">Целевая ячейка склада готовой продукции</label>
+                        <div class="input-group input-group-lg shadow-sm">
+                            <span class="input-group-text"><i class="bi bi-geo-alt-fill text-primary"></i></span>
+                            <input type="text" name="cell_number" class="form-control" placeholder="Например: B-201" required>
                         </div>
-                        <div class="form-text">Если ячейка уже содержит данное изделие, остаток суммируется.</div>
+                        <div class="form-text">Если ячейка новая, она будет создана. Если в ней уже хранятся изделия выбранного типа, баланс обновится.</div>
                     </div>
-                    <button type="submit" class="btn btn-success btn-lg w-100 py-3 shadow"><i class="bi bi-cpu-fill"></i> Запустить сборку</button>
+                    <button type="submit" class="btn btn-success btn-lg w-100 py-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-cpu-fill"></i> Запустить сборку и оприходовать
+                    </button>
                 </form>
             </div>
         </div>

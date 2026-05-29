@@ -2,71 +2,72 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="mb-1 text-primary"><i class="bi bi-box"></i> Справочник: Изделия</h3>
-        <p class="text-muted mb-0">Список выпускаемых предприятием готовых изделий.</p>
+        <h3 class="fw-bold mb-1"><i class="bi bi-box text-primary"></i> Справочник готовых изделий</h3>
+        <p class="text-muted mb-0">Перечень всех типов изделий, производимых и собираемых в цехе.</p>
     </div>
-    <button class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#addProductModal" style="width: 50px; height: 50px; font-size: 24px; line-height: 1;">
-        <i class="bi bi-plus"></i>
+    <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        <i class="bi bi-plus-lg"></i> Добавить изделие
     </button>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary">
-                    <tr>
-                        <th class="ps-4">ID</th>
-                        <th>Название изделия</th>
-                        <th>Описание</th>
-                        <th class="text-end pe-4">Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in data %}
-                    <tr>
-                        <td class="ps-4 text-muted">{{ row.id_product_type }}</td>
-                        <td><strong>{{ row.name }}</strong></td>
-                        <td class="text-muted">{{ row.description or '—' }}</td>
-                        <td class="text-end pe-4">
-                            <a href="/delete_product/{{ row.id_product_type }}" class="btn btn-sm btn-outline-danger rounded-pill" onclick="return confirm('Удалить это изделие и его связи?');">
-                                <i class="bi bi-trash"></i> Удалить
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">Изделий пока нет в справочнике. Нажмите "+", чтобы добавить.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 10%">ID</th>
+                    <th style="width: 30%">Название изделия</th>
+                    <th style="width: 45%">Описание изделия</th>
+                    <th style="width: 15%" class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    <td><span class="text-muted">#{{ row.id_product_type }}</span></td>
+                    <td><strong class="text-dark">{{ row.name }}</strong></td>
+                    <td class="text-secondary">{{ row.description or '—' }}</td>
+                    <td class="text-end">
+                        <a href="/delete_product/{{ row.id_product_type }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить это изделие? Все его спецификации также будут удалены.');">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                        Список изделий пуст.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- Модальное окно создания -->
 <div class="modal fade" id="addProductModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-content border-0 shadow">
             <form method="POST">
-                <div class="modal-header bg-primary text-white border-0 py-3">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Добавить изделие</h5>
+                <div class="modal-header bg-dark text-white border-0 py-3">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Добавить изделие</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body bg-light p-4">
+                <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary">Название изделия</label>
-                        <input type="text" name="name" class="form-control" placeholder="Например: ПК Офисный" required>
+                        <label class="form-label fw-semibold">Название изделия</label>
+                        <input type="text" name="name" class="form-control" placeholder="Например: ПК Офисный Standard" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary">Описание изделия</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="Краткое описание конфигурации..."></textarea>
+                        <label class="form-label fw-semibold">Описание изделия</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Краткое описание конфигурации и характеристик..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-light p-3">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg"></i> Сохранить</button>
+                <div class="modal-footer border-0 bg-light py-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Сохранить</button>
                 </div>
             </form>
         </div>
