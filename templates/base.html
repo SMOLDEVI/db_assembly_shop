@@ -13,18 +13,137 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --primary-color: #4a607a;
+            --primary-hover: #384b60;
+            --secondary-color: #6c7a89;
+            --bg-color: #f5f7fa;
+            --text-color: #2d3748;
+            --card-border: #e2e8f0;
+            --success-color: #3b7a57;
+            --success-hover: #2d5f43;
+            --danger-color: #b33939;
+            --danger-hover: #8c2c2c;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f4f6f9;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
-        .navbar-brand {
-            letter-spacing: 0.5px;
+
+        /* Цветовая гамма элементов */
+        .bg-primary {
+            background-color: var(--primary-color) !important;
         }
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+
+        /* Кнопки */
+        .btn-primary {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover) !important;
+            border-color: var(--primary-hover) !important;
+        }
+        .btn-success {
+            background-color: var(--success-color) !important;
+            border-color: var(--success-color) !important;
+            color: #ffffff !important;
+        }
+        .btn-success:hover {
+            background-color: var(--success-hover) !important;
+            border-color: var(--success-hover) !important;
+        }
+        .btn-outline-danger {
+            color: var(--danger-color) !important;
+            border-color: var(--danger-color) !important;
+        }
+        .btn-outline-danger:hover {
+            background-color: var(--danger-color) !important;
+            color: #ffffff !important;
+        }
+
+        /* Навигационная панель */
+        .navbar-dark.bg-dark {
+            background-color: #2d3c4d !important;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .navbar-dark .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: #ffffff !important;
+        }
+        .navbar-dark .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+
+        /* Карточки */
         .card {
             border-radius: 12px;
+            border: 1px solid var(--card-border) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
         }
-        .btn-outline-light:hover {
-            color: #212529;
+
+        /* Таблицы */
+        .table {
+            color: var(--text-color) !important;
+        }
+        .table-light {
+            background-color: #eaeff5 !important;
+            color: #4a5568 !important;
+        }
+        .table-danger-subtle {
+            background-color: #fff2f2 !important;
+        }
+
+        /* Бейджи */
+        .badge.bg-success {
+            background-color: #e6f4ea !important;
+            color: #137333 !important;
+            font-weight: 500;
+        }
+        .badge.bg-danger {
+            background-color: #fce8e6 !important;
+            color: #c5221f !important;
+            font-weight: 500;
+        }
+        .badge.bg-secondary {
+            background-color: #edf2f7 !important;
+            color: #4a5568 !important;
+            font-weight: 500;
+        }
+        .badge.bg-dark {
+            background-color: #e2e8f0 !important;
+            color: #2d3748 !important;
+            font-weight: 600;
+        }
+
+        /* Уведомления и предупреждения */
+        .alert-success {
+            background-color: #e6f4ea !important;
+            color: #137333 !important;
+            border-color: #ceead6 !important;
+        }
+        .alert-danger {
+            background-color: #fce8e6 !important;
+            color: #c5221f !important;
+            border-color: #fad2cf !important;
+        }
+        .alert-warning {
+            background-color: #fef7e0 !important;
+            color: #b06000 !important;
+            border-color: #feebb6 !important;
+        }
+        .alert-info {
+            background-color: #e8f0fe !important;
+            color: #1a73e8 !important;
+            border-color: #d2e3fc !important;
         }
     </style>
 </head>

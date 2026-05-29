@@ -9,7 +9,7 @@
                 <p class="text-muted mb-0">Расчет дефицита деталей производится по формуле: <code>(План выпуска × Необходимое кол-во в изделии) − Наличие на складе</code></p>
             </div>
             {% if missing_data %}
-            <a href="/export_csv" class="btn btn-danger btn-lg shadow-sm"><i class="bi bi-file-earmark-arrow-down"></i> Экспорт CSV отчета</a>
+            <a href="/export_csv" class="btn btn-outline-danger btn-lg shadow-sm"><i class="bi bi-file-earmark-arrow-down"></i> Экспорт CSV отчета</a>
             {% endif %}
         </div>
     </div>
@@ -19,7 +19,7 @@
     <!-- Левая колонка: Настройка плана выпуска -->
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-dark text-white border-0 py-3 d-flex align-items-center">
+            <div class="card-header bg-primary text-white border-0 py-3 d-flex align-items-center">
                 <h5 class="mb-0"><i class="bi bi-calendar-event"></i> План выпуска</h5>
             </div>
             <div class="card-body bg-light">
@@ -43,7 +43,7 @@
     <!-- Правая колонка: Детали, недостающие для выполнения плана -->
     <div class="col-md-8">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-danger text-white border-0 py-3">
+            <div class="card-header bg-primary text-white border-0 py-3">
                 <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Дефицит комплектующих на складе</h5>
             </div>
             <div class="card-body p-0">
@@ -63,7 +63,7 @@
                                 <td class="ps-4 fw-bold text-dark">{{ row['part_name'] }}</td>
                                 <td><span class="badge bg-secondary py-2 px-3">{{ row['total_needed'] }} шт.</span></td>
                                 <td><span class="badge bg-success py-2 px-3">{{ row['in_stock'] }} шт.</span></td>
-                                <td><span class="badge bg-danger py-2 px-3 fw-bold text-white"><i class="bi bi-arrow-down-circle"></i> {{ row['to_order'] }} шт.</span></td>
+                                <td><span class="badge bg-danger py-2 px-3 fw-bold"><i class="bi bi-arrow-down-circle"></i> {{ row['to_order'] }} шт.</span></td>
                             </tr>
                             {% else %}
                             <tr>
