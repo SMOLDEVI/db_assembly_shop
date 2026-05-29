@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: assembly_shop_app
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      # Исключаем локальную виртуальную среду .venv из монтирования в контейнер
+      - /app/.venv
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: always

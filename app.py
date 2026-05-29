@@ -392,4 +392,4 @@ def delete_product_cell(id):
     return redirect(url_for('product_cells'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
