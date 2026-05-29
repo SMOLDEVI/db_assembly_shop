@@ -133,6 +133,7 @@ def export():
     conn.close()
 
     si = io.StringIO()
+    si.write('\ufeff') # Добавляем BOM для корректного отображения кириллицы в Excel
     cw = csv.writer(si)
     cw.writerow(['Название детали', 'Артикул', 'Остаток на складе (шт)']) # Заголовки
     for row in data:
@@ -238,6 +239,7 @@ def export_csv():
     conn.close()
     
     si = io.StringIO()
+    si.write('\ufeff') # Добавляем BOM для корректного отображения кириллицы в Excel
     cw = csv.writer(si)
     cw.writerow(['Деталь', 'Нужно всего по плану', 'Есть на складе', 'Заказать у поставщика'])
     for row in missing_data:
