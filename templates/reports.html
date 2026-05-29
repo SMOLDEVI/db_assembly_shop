@@ -1,33 +1,84 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Детали, недостающие для выполнения плана</h2>
-<p class="text-muted">Расчет производится по формуле: (План выпуска * Необходимое кол-во в изделии) - Наличие на складе</p>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1 text-primary"><i class="bi bi-file-earmark-bar-graph"></i> Планирование и дефицит деталей</h2>
+                <p class="text-muted mb-0">Расчет дефицита деталей производится по формуле: <code>(План выпуска × Необходимое кол-во в изделии) − Наличие на складе</code></p>
+            </div>
+            {% if missing_data %}
+            <a href="/export_csv" class="btn btn-danger btn-lg shadow-sm"><i class="bi bi-file-earmark-arrow-down"></i> Экспорт CSV отчета</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
-<a href="/export_csv" class="btn btn-warning mb-3">Скачать отчет (.csv)</a>
+<div class="row g-4">
+    <!-- Левая колонка: Настройка плана выпуска -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-dark text-white border-0 py-3 d-flex align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> План выпуска</h5>
+            </div>
+            <div class="card-body bg-light">
+                <p class="text-muted small">Укажите целевое количество выпуска изделий для расчета требуемого объема деталей:</p>
+                <form action="/update_plan" method="POST">
+                    {% for plan in plans %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small">{{ plan.name }}</label>
+                        <div class="input-group">
+                            <input type="number" name="plan_{{ plan.id_product_type }}" class="form-control" value="{{ plan.target_quantity }}" min="0" required>
+                            <span class="input-group-text bg-white">шт.</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-100 mt-2 shadow-sm"><i class="bi bi-check-circle"></i> Сохранить и пересчитать</button>
+                </form>
+            </div>
+        </div>
+    </div>
 
-<table class="table table-hover table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>Деталь</th>
-            <th>Нужно всего по плану</th>
-            <th>Есть на складе</th>
-            <th class="text-danger">Заказать у поставщика</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in missing_data %}
-        <tr>
-            <td><b>{{ row['part_name'] }}</b></td>
-            <td>{{ row['total_needed'] }} шт.</td>
-            <td>{{ row['in_stock'] }} шт.</td>
-            <td class="text-danger fw-bold">{{ row['to_order'] }} шт.</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="4" class="text-center text-success">Всего хватает! Заказывать ничего не нужно.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <!-- Правая колонка: Детали, недостающие для выполнения плана -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-danger text-white border-0 py-3">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Дефицит комплектующих на складе</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary">
+                            <tr>
+                                <th class="ps-4">Деталь</th>
+                                <th>Нужно всего по плану</th>
+                                <th>Имеется на складе</th>
+                                <th class="text-danger">Дефицит (Заказать)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in missing_data %}
+                            <tr class="table-danger-subtle">
+                                <td class="ps-4 fw-bold text-dark">{{ row['part_name'] }}</td>
+                                <td><span class="badge bg-secondary py-2 px-3">{{ row['total_needed'] }} шт.</span></td>
+                                <td><span class="badge bg-success py-2 px-3">{{ row['in_stock'] }} шт.</span></td>
+                                <td><span class="badge bg-danger py-2 px-3 fw-bold text-white"><i class="bi bi-arrow-down-circle"></i> {{ row['to_order'] }} шт.</span></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="text-success fs-1 mb-2"><i class="bi bi-check2-circle"></i></div>
+                                    <h5 class="text-success">Всего хватает!</h5>
+                                    <p class="text-muted mb-0">На складе достаточно деталей для выполнения текущего плана.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

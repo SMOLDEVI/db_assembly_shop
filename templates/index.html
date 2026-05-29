@@ -1,25 +1,151 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row align-items-center">
-    <div class="col-md-6">
-        <h2 class="mb-4"><i class="bi bi-pie-chart"></i> Аналитика склада готовой продукции</h2>
-        <p class="text-muted">Данная диаграмма формируется автоматически на основе данных из таблицы <code>product_warehouse_cell</code>.</p>
-    </div>
-    <div class="col-md-6">
-        <canvas id="stockChart"></canvas>
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-primary"><i class="bi bi-grid-1x2-fill"></i> Информационная панель сборочного цеха</h2>
+        <p class="text-muted">Оперативная сводка остатков, спецификаций и состояния производства.</p>
     </div>
 </div>
 
+<!-- Блок карточек показателей (Stats widgets) -->
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-white h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="fs-1 text-primary me-3"><i class="bi bi-box-seam"></i></div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase fw-semibold">Изделия на складе</h6>
+                    <h3 class="mb-0 fw-bold">{{ stats.total_products }} <span class="fs-6 text-muted fw-normal">шт.</span></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-white h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="fs-1 text-success me-3"><i class="bi bi-nut"></i></div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase fw-semibold">Детали на складе</h6>
+                    <h3 class="mb-0 fw-bold">{{ stats.total_parts }} <span class="fs-6 text-muted fw-normal">шт.</span></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-white h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="fs-1 text-info me-3"><i class="bi bi-diagram-3"></i></div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase fw-semibold">Спецификации</h6>
+                    <h3 class="mb-0 fw-bold">{{ stats.total_configs }} <span class="fs-6 text-muted fw-normal">актив.</span></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-white h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="fs-1 {% if stats.deficit_count > 0 %}text-danger{% else %}text-muted{% endif %} me-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase fw-semibold">Дефицит деталей</h6>
+                    <h3 class="mb-0 fw-bold">
+                        {% if stats.deficit_count > 0 %}
+                        <span class="text-danger">{{ stats.deficit_count }} поз.</span>
+                        {% else %}
+                        <span class="text-success">0 поз.</span>
+                        {% endif %}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Аналитика склада готовой продукции -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex align-items-center">
+                <h5 class="mb-0 fw-bold text-secondary"><i class="bi bi-pie-chart-fill text-primary"></i> Доля изделий на складе</h5>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center py-4">
+                {% if labels %}
+                <div style="position: relative; height:280px; width:100%">
+                    <canvas id="stockChart"></canvas>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-1 mb-2"></i>
+                    <p>Нет готовой продукции на складе.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 p-4 bg-light">
+            <h4 class="mb-3"><i class="bi bi-info-circle text-primary"></i> Справка системы</h4>
+            <p>Добро пожаловать в рабочую среду управления сборочным цехом. Данное ПО позволяет автоматизировать следующие задачи:</p>
+            <ul class="list-group list-group-flush bg-transparent">
+                <li class="list-group-item bg-transparent px-0 py-2 d-flex align-items-start">
+                    <i class="bi bi-check2-circle text-success me-2 mt-1"></i>
+                    <div><strong>Учет номенклатуры:</strong> Ведение перечня комплектующих (деталей) и готовых изделий.</div>
+                </li>
+                <li class="list-group-item bg-transparent px-0 py-2 d-flex align-items-start">
+                    <i class="bi bi-check2-circle text-success me-2 mt-1"></i>
+                    <div><strong>Спецификации (составы):</strong> Конфигурирование дерева состава изделий для автоматического расчета.</div>
+                </li>
+                <li class="list-group-item bg-transparent px-0 py-2 d-flex align-items-start">
+                    <i class="bi bi-check2-circle text-success me-2 mt-1"></i>
+                    <div><strong>Адресное хранение:</strong> Распределение комплектующих и изделий по конкретным физическим ячейкам склада.</div>
+                </li>
+                <li class="list-group-item bg-transparent px-0 py-2 d-flex align-items-start">
+                    <i class="bi bi-check2-circle text-success me-2 mt-1"></i>
+                    <div><strong>Автоматический дефицит:</strong> Расчет нехватки деталей под плановые показатели производства с экспортом.</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% if labels %}
 <script>
-    new Chart(document.getElementById('stockChart'), {
-        type: 'pie',
-        data: {
-            labels: {{ labels | safe }},
-            datasets: [{
-                data: {{ data | safe }},
-                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1']
-            }]
-        }
+    document.addEventListener("DOMContentLoaded", function() {
+        new Chart(document.getElementById('stockChart'), {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels | safe }},
+                datasets: [{
+                    data: {{ data | safe }},
+                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#3dd5f3', '#fd7e14'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
     });
 </script>
+{% endif %}
 {% endblock %}

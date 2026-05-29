@@ -1,26 +1,95 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Таблица: part_warehouse_cell (Склад деталей)</h3>
-<form method="POST" class="mb-4 bg-light p-3 border">
-    <div class="row">
-        <div class="col"><input type="text" name="cell_number" class="form-control" placeholder="Номер ячейки" required></div>
-        <div class="col">
-            <select name="part_id" class="form-control" required>
-                <option value="">Тип детали (part_id)...</option>
-                {% for part in parts %}<option value="{{ part.id_part }}">{{ part.name }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="col"><input type="number" name="quantity_stored" class="form-control" placeholder="Кол-во хранимого" required></div>
-        <div class="col"><button type="submit" class="btn btn-success">Добавить</button></div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1 text-primary"><i class="bi bi-building-down"></i> Размещение деталей на складе</h3>
+        <p class="text-muted mb-0">Учет ячеек хранения комплектующих и их текущего остатка.</p>
     </div>
-</form>
-<table class="table table-bordered">
-    <thead class="table-dark"><tr><th>id_part_cell</th><th>cell_number</th><th>Деталь (part_id)</th><th>quantity_stored</th><th>Действие</th></tr></thead>
-    <tbody>
-        {% for row in data %}
-        <tr><td>{{ row.id_part_cell }}</td><td>{{ row.cell_number }}</td><td>{{ row.part_name }}</td><td>{{ row.quantity_stored }}</td>
-        <td><a href="/delete_part_cell/{{ row.id_part_cell }}" class="btn btn-sm btn-danger">Удалить</a></td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <button class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#addPartCellModal" style="width: 50px; height: 50px; font-size: 24px; line-height: 1;">
+        <i class="bi bi-plus"></i>
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary">
+                    <tr>
+                        <th class="ps-4">ID записи</th>
+                        <th>Номер ячейки</th>
+                        <th>Деталь</th>
+                        <th>Остаток в ячейке</th>
+                        <th class="text-end pe-4">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td class="ps-4 text-muted">{{ row.id_part_cell }}</td>
+                        <td><span class="badge bg-dark py-2 px-3 fw-bold"><i class="bi bi-geo-alt"></i> {{ row.cell_number }}</span></td>
+                        <td><strong>{{ row.part_name }}</strong></td>
+                        <td>
+                            {% if row.quantity_stored > 0 %}
+                            <span class="badge bg-success py-2 px-3">{{ row.quantity_stored }} шт.</span>
+                            {% else %}
+                            <span class="badge bg-danger py-2 px-3">Пусто</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="/delete_part_cell/{{ row.id_part_cell }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить эту ячейку хранения?');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">На складе деталей пока ничего не размещено. Нажмите "+", чтобы положить деталь.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="addPartCellModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="POST">
+                <div class="modal-header bg-primary text-white border-0 py-3">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Разместить детали на склад</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Номер ячейки на складе</label>
+                        <input type="text" name="cell_number" class="form-control" placeholder="Например: A-102" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Деталь</label>
+                        <select name="part_id" class="form-select" required>
+                            <option value="">Выберите тип детали...</option>
+                            {% for part in parts %}
+                            <option value="{{ part.id_part }}">{{ part.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Количество на складирование</label>
+                        <div class="input-group">
+                            <input type="number" name="quantity_stored" class="form-control" value="10" min="0" required>
+                            <span class="input-group-text bg-white">шт.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg"></i> Разместить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

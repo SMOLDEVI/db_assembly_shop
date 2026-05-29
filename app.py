@@ -22,11 +22,35 @@ def index():
         JOIN product_type pt ON pwc.product_type_id = pt.id_product_type
         GROUP BY pt.id_product_type HAVING total > 0
     ''').fetchall()
+    
+    # Расчет дефицита для статистики дашборда
+    parts = conn.execute('SELECT id_part FROM part').fetchall()
+    deficit_count = 0
+    for part in parts:
+        part_id = part['id_part']
+        needed_row = conn.execute('''
+            SELECT SUM(COALESCE(pp.target_quantity, 0) * pc.quantity) as total_needed
+            FROM product_composition pc
+            JOIN production_plan pp ON pc.product_type_id = pp.product_type_id
+            WHERE pc.part_id = ?
+        ''', (part_id,)).fetchone()
+        total_needed = needed_row['total_needed'] if needed_row['total_needed'] else 0
+        stock_row = conn.execute('SELECT SUM(quantity_stored) as total FROM part_warehouse_cell WHERE part_id = ?', (part_id,)).fetchone()
+        in_stock = stock_row['total'] if stock_row['total'] else 0
+        if total_needed > in_stock:
+            deficit_count += 1
+
+    stats = {
+        'total_products': conn.execute('SELECT SUM(quantity_stored) FROM product_warehouse_cell').fetchone()[0] or 0,
+        'total_parts': conn.execute('SELECT SUM(quantity_stored) FROM part_warehouse_cell').fetchone()[0] or 0,
+        'total_configs': conn.execute('SELECT COUNT(DISTINCT product_type_id) FROM product_composition').fetchone()[0] or 0,
+        'deficit_count': deficit_count
+    }
     conn.close()
     
     labels = [item['name'] for item in items]
     data = [item['total'] for item in items]
-    return render_template('index.html', labels=labels, data=data)
+    return render_template('index.html', labels=labels, data=data, stats=stats)
 
 # ================= 2. АВТОМАТИЗАЦИЯ: СБОРКА ИЗДЕЛИЯ =================
 @app.route('/assemble', methods=['GET', 'POST'])
@@ -117,6 +141,111 @@ def export():
     output = Response(si.getvalue())
     output.headers["Content-Disposition"] = "attachment; filename=warehouse_inventory_report.csv"
     output.headers["Content-type"] = "text/csv; charset=utf-8-sig" # utf-8-sig нужен для корректного отображения кириллицы в Excel
+    return output
+
+# ================= 3.1. ОТЧЕТ О ДЕФИЦИТЕ ДЕТАЛЕЙ ДЛЯ ПЛАНА =================
+@app.route('/reports', methods=['GET'])
+def reports():
+    conn = get_db_connection()
+    
+    # 1. Получаем текущие планы выпуска для отображения в форме
+    plans = conn.execute('''
+        SELECT pt.id_product_type, pt.name, COALESCE(pp.target_quantity, 0) as target_quantity
+        FROM product_type pt
+        LEFT JOIN production_plan pp ON pt.id_product_type = pp.product_type_id
+    ''').fetchall()
+    
+    # 2. Вычисляем дефицит деталей
+    parts = conn.execute('SELECT * FROM part').fetchall()
+    missing_data = []
+    
+    for part in parts:
+        part_id = part['id_part']
+        # Сколько нужно по плану
+        needed_row = conn.execute('''
+            SELECT SUM(COALESCE(pp.target_quantity, 0) * pc.quantity) as total_needed
+            FROM product_composition pc
+            JOIN production_plan pp ON pc.product_type_id = pp.product_type_id
+            WHERE pc.part_id = ?
+        ''', (part_id,)).fetchone()
+        total_needed = needed_row['total_needed'] if needed_row['total_needed'] else 0
+        
+        # Сколько на складе
+        stock_row = conn.execute('SELECT SUM(quantity_stored) as total FROM part_warehouse_cell WHERE part_id = ?', (part_id,)).fetchone()
+        in_stock = stock_row['total'] if stock_row['total'] else 0
+        
+        if total_needed > in_stock:
+            missing_data.append({
+                'part_name': part['name'],
+                'total_needed': total_needed,
+                'in_stock': in_stock,
+                'to_order': total_needed - in_stock
+            })
+            
+    conn.close()
+    return render_template('reports.html', plans=plans, missing_data=missing_data)
+
+@app.route('/update_plan', methods=['POST'])
+def update_plan():
+    conn = get_db_connection()
+    try:
+        # Получаем данные о планах из формы
+        for key, val in request.form.items():
+            if key.startswith('plan_'):
+                product_id = int(key.split('_')[1])
+                qty = int(val) if val else 0
+                # Вставляем или обновляем план
+                conn.execute('''
+                    INSERT INTO production_plan (product_type_id, target_quantity)
+                    VALUES (?, ?)
+                    ON CONFLICT(product_type_id) DO UPDATE SET target_quantity = excluded.target_quantity
+                ''', (product_id, qty))
+        conn.commit()
+        flash('План производства успешно обновлен!', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Ошибка при обновлении плана: {str(e)}', 'danger')
+    conn.close()
+    return redirect(url_for('reports'))
+
+@app.route('/export_csv')
+def export_csv():
+    conn = get_db_connection()
+    parts = conn.execute('SELECT * FROM part').fetchall()
+    missing_data = []
+    
+    for part in parts:
+        part_id = part['id_part']
+        needed_row = conn.execute('''
+            SELECT SUM(COALESCE(pp.target_quantity, 0) * pc.quantity) as total_needed
+            FROM product_composition pc
+            JOIN production_plan pp ON pc.product_type_id = pp.product_type_id
+            WHERE pc.part_id = ?
+        ''', (part_id,)).fetchone()
+        total_needed = needed_row['total_needed'] if needed_row['total_needed'] else 0
+        
+        stock_row = conn.execute('SELECT SUM(quantity_stored) as total FROM part_warehouse_cell WHERE part_id = ?', (part_id,)).fetchone()
+        in_stock = stock_row['total'] if stock_row['total'] else 0
+        
+        if total_needed > in_stock:
+            missing_data.append({
+                'part_name': part['name'],
+                'total_needed': total_needed,
+                'in_stock': in_stock,
+                'to_order': total_needed - in_stock
+            })
+            
+    conn.close()
+    
+    si = io.StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['Деталь', 'Нужно всего по плану', 'Есть на складе', 'Заказать у поставщика'])
+    for row in missing_data:
+        cw.writerow([row['part_name'], row['total_needed'], row['in_stock'], row['to_order']])
+        
+    output = Response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=missing_parts_report.csv"
+    output.headers["Content-type"] = "text/csv; charset=utf-8-sig"
     return output
 
 # ================= 4. CRUD ТАБЛИЦЫ: part =================

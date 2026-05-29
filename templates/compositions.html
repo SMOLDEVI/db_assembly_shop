@@ -1,31 +1,92 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Таблица: product_composition (Состав изделий)</h3>
-<form method="POST" class="mb-4 bg-light p-3 border">
-    <div class="row">
-        <div class="col">
-            <select name="product_type_id" class="form-control" required>
-                <option value="">Выберите изделие...</option>
-                {% for p in products %}<option value="{{ p.id_product_type }}">{{ p.name }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="col">
-            <select name="part_id" class="form-control" required>
-                <option value="">Выберите деталь...</option>
-                {% for part in parts %}<option value="{{ part.id_part }}">{{ part.name }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="col"><input type="number" name="quantity" class="form-control" placeholder="Количество" required></div>
-        <div class="col"><button type="submit" class="btn btn-success">Добавить</button></div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1 text-primary"><i class="bi bi-diagram-3"></i> Спецификации изделий</h3>
+        <p class="text-muted mb-0">Состав каждого готового изделия (список входящих в него деталей и их количество).</p>
     </div>
-</form>
-<table class="table table-bordered">
-    <thead class="table-dark"><tr><th>Изделие</th><th>Деталь</th><th>Количество</th><th>Действие</th></tr></thead>
-    <tbody>
-        {% for row in data %}
-        <tr><td>{{ row.product_name }}</td><td>{{ row.part_name }}</td><td>{{ row.quantity }}</td>
-        <td><a href="/delete_composition/{{ row.product_type_id }}/{{ row.part_id }}" class="btn btn-sm btn-danger">Удалить</a></td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <button class="btn btn-primary rounded-circle shadow" data-bs-toggle="modal" data-bs-target="#addCompositionModal" style="width: 50px; height: 50px; font-size: 24px; line-height: 1;">
+        <i class="bi bi-plus"></i>
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary">
+                    <tr>
+                        <th class="ps-4">Готовое изделие</th>
+                        <th>Комплектующая деталь</th>
+                        <th>Расход на единицу</th>
+                        <th class="text-end pe-4">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td class="ps-4"><strong>{{ row.product_name }}</strong></td>
+                        <td><span class="badge bg-secondary py-2 px-3 fs-6"><i class="bi bi-nut"></i> {{ row.part_name }}</span></td>
+                        <td><strong class="text-primary">{{ row.quantity }} шт.</strong></td>
+                        <td class="text-end pe-4">
+                            <a href="/delete_composition/{{ row.product_type_id }}/{{ row.part_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить эту деталь из состава изделия?');">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">Связей состава пока нет. Нажмите "+", чтобы связать изделие с его комплектующими.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="addCompositionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="POST">
+                <div class="modal-header bg-primary text-white border-0 py-3">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Добавить деталь в состав</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Готовое изделие</label>
+                        <select name="product_type_id" class="form-select" required>
+                            <option value="">Выберите готовое изделие...</option>
+                            {% for p in products %}
+                            <option value="{{ p.id_product_type }}">{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Комплектующая деталь</label>
+                        <select name="part_id" class="form-select" required>
+                            <option value="">Выберите комплектующую деталь...</option>
+                            {% for part in parts %}
+                            <option value="{{ part.id_part }}">{{ part.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Количество на единицу готового изделия</label>
+                        <div class="input-group">
+                            <input type="number" name="quantity" class="form-control" value="1" min="1" required>
+                            <span class="input-group-text bg-white">шт.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg"></i> Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
