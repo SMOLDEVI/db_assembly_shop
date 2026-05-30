@@ -1,0 +1,9 @@
+.venv
+__pycache__
+*.pyc
+.git
+.gitignore
+generated_docs
+*.md
+.antigravitycli
+__docs
