@@ -3,52 +3,111 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-diagram-3 text-primary"></i> Спецификации изделий</h3>
-        <p class="text-muted mb-0">Состав готовой продукции (какие детали и в каком количестве входят в изделие).</p>
+        <p class="text-muted mb-0">Нажмите на изделие, чтобы увидеть его состав.</p>
     </div>
     <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addCompositionModal">
         <i class="bi bi-plus-lg"></i> Добавить в состав
     </button>
 </div>
 
-<div class="card">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th style="width: 40%">Готовое изделие</th>
-                    <th style="width: 35%">Комплектующая деталь</th>
-                    <th style="width: 15%">Расход</th>
-                    <th style="width: 10%" class="text-end">Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in data %}
-                <tr>
-                    <td><strong class="text-dark">{{ row.product_name }}</strong></td>
-                    <td>
-                        <span class="d-inline-flex align-items-center gap-1">
-                            <i class="bi bi-nut text-secondary"></i> {{ row.part_name }}
-                        </span>
-                    </td>
-                    <td><span class="badge-custom badge-primary">{{ row.quantity }} шт.</span></td>
-                    <td class="text-end">
-                        <a href="/delete_composition/{{ row.product_type_id }}/{{ row.part_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить деталь из состава?');">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                    </td>
-                </tr>
+<div class="accordion" id="specAccordion">
+    {% for group in products_with_parts %}
+    <div class="card mb-2">
+        <div class="card-header d-flex justify-content-between align-items-center py-3 px-4" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse{{ group.product.id_product_type }}" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-box-seam fs-5 text-primary"></i>
+                <div>
+                    <strong class="fs-6">{{ group.product.name }}</strong>
+                    {% if group.product.description %}
+                    <br><small class="text-muted">{{ group.product.description }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-secondary rounded-pill">{{ group.parts|length }} {{ group.parts|length|pluralize_ru('деталь','детали','деталей') }}</span>
+                <i class="bi bi-chevron-down text-muted transition-rotate"></i>
+            </div>
+        </div>
+        <div id="collapse{{ group.product.id_product_type }}" class="collapse {% if loop.first %}show{% endif %}" data-bs-parent="#specAccordion">
+            <div class="card-body p-0">
+                {% if group.parts %}
+                <div class="table-responsive m-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">Деталь</th>
+                                <th style="width: 25%">Артикул</th>
+                                <th style="width: 15%">Количество</th>
+                                <th style="width: 10%" class="text-end">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in group.parts %}
+                            <tr>
+                                <td>
+                                    <span class="d-inline-flex align-items-center gap-2">
+                                        <i class="bi bi-nut text-secondary"></i> {{ row.part_name }}
+                                    </span>
+                                </td>
+                                <td><span class="badge-custom badge-primary">{{ row.part_article }}</span></td>
+                                <td>{{ row.quantity }} шт.</td>
+                                <td class="text-end">
+                                    <a href="/delete_composition/{{ row.product_type_id }}/{{ row.part_id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить деталь &quot;{{ row.part_name }}&quot; из состава &quot;{{ row.product_name }}&quot;?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
-                <tr>
-                    <td colspan="4" class="text-center py-5 text-muted">
-                        <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
-                        Спецификации состава не заданы.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-3 mb-2 d-block"></i>
+                    Состав не задан. Нажмите «Добавить в состав».
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+            <p class="fs-6">Нет ни одного изделия. Сначала создайте типы изделий.</p>
+        </div>
+    </div>
+    {% endfor %}
 </div>
+
+<style>
+    .transition-rotate {
+        transition: transform 0.2s ease;
+    }
+    .collapse.show + .card-body .transition-rotate,
+    .collapsing + .card-body .transition-rotate,
+    [aria-expanded="true"] .transition-rotate {
+        transform: rotate(180deg);
+    }
+    .card-header {
+        background: linear-gradient(to right, #f8fafc, #f1f5f9);
+        border-bottom: 1px solid var(--card-border);
+    }
+    .card-header:hover {
+        background: linear-gradient(to right, #f1f5f9, #e8edf3);
+    }
+    .accordion .card {
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+    .accordion .card .table-responsive {
+        border-radius: 0;
+        border: none;
+    }
+    .accordion .card .table th {
+        background-color: #f1f5f9;
+    }
+</style>
 
 <!-- Модальное окно добавления -->
 <div class="modal fade" id="addCompositionModal" tabindex="-1">

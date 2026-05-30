@@ -104,6 +104,12 @@
                             <span class="input-group-text">шт.</span>
                         </div>
                     </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="generate_doc" value="1" id="genDocReceive" checked>
+                        <label class="form-check-label fw-semibold" for="genDocReceive">
+                            <i class="bi bi-file-earmark-word text-primary me-1"></i> Создать документ (акт приемки)
+                        </label>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 bg-light py-3">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -139,6 +145,12 @@
                             <input type="number" name="quantity" id="issueQuantityInput" class="form-control" value="1" min="1" required>
                             <span class="input-group-text">шт.</span>
                         </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="generate_doc" value="1" id="genDocIssue" checked>
+                        <label class="form-check-label fw-semibold" for="genDocIssue">
+                            <i class="bi bi-file-earmark-word text-warning me-1"></i> Создать документ (накладная отпуска)
+                        </label>
                     </div>
                 </div>
                 <div class="modal-footer border-0 bg-light py-3">

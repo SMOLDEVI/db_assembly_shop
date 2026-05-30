@@ -43,20 +43,22 @@
             background: var(--primary-gradient);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             border-bottom: 2px solid var(--accent-color);
-            padding: 1rem 0;
+            padding: 0.5rem 0;
         }
         .navbar-custom .navbar-brand {
             color: #ffffff !important;
             font-weight: 700;
             letter-spacing: 0.5px;
+            margin-right: 1.5rem;
         }
         .navbar-custom .nav-link {
             color: #cbd5e1 !important;
             font-weight: 500;
+            font-size: 0.9rem;
             transition: all 0.2s ease;
-            padding: 0.5rem 1rem !important;
+            padding: 0.4rem 0.65rem !important;
             border-radius: 6px;
-            margin: 0 0.1rem;
+            margin: 0 0.05rem;
         }
         .navbar-custom .nav-link:hover {
             color: #ffffff !important;
@@ -66,6 +68,15 @@
             color: #ffffff !important;
             background-color: var(--accent-hover);
             box-shadow: 0 4px 6px -1px rgba(79, 115, 150, 0.4);
+        }
+        
+        @media (min-width: 992px) {
+            .navbar-custom .navbar-collapse {
+                align-items: center;
+            }
+            .navbar-custom .navbar-nav {
+                align-items: center;
+            }
         }
         
         .dropdown-menu {
@@ -245,20 +256,20 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-xl navbar-dark navbar-custom">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="/">
-                <i class="bi bi-cpu fs-3 text-info me-2"></i>
-                <div class="d-flex flex-column">
-                    <span class="fs-5 fw-bold leading-tight">ООО «ТехноПромСборка»</span>
-                    <span class="fs-7 text-info opacity-75" style="font-size: 0.65rem; font-weight: normal;">Сборочный цех • Учет</span>
+            <a class="navbar-brand d-flex align-items-center py-0" href="/">
+                <i class="bi bi-cpu fs-3 text-info me-2" style="line-height: 1; vertical-align: middle;"></i>
+                <div class="d-flex flex-column" style="line-height: 1.1;">
+                    <span class="fs-5 fw-bold">ООО «ТехноПромСборка»</span>
+                    <span style="font-size: 0.65rem; font-weight: normal;" class="text-info opacity-75">Сборочный цех • Учет</span>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-4">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
                             <i class="bi bi-speedometer2 me-1"></i> Панель
@@ -268,7 +279,7 @@
                         <a class="nav-link dropdown-toggle {% if request.path in ['/parts', '/products', '/compositions'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-journal-text me-1"></i> Справочники
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" data-bs-popper="none">
                             <li><a class="dropdown-item d-flex align-items-center" href="/parts"><i class="bi bi-nut me-2"></i> Детали</a></li>
                             <li><a class="dropdown-item d-flex align-items-center" href="/products"><i class="bi bi-box me-2"></i> Изделия</a></li>
                             <li><a class="dropdown-item d-flex align-items-center" href="/compositions"><i class="bi bi-diagram-3 me-2"></i> Спецификации</a></li>
@@ -299,7 +310,7 @@
                         </a>
                     </li>
                 </ul>
-                <div class="d-flex mt-2 mt-xl-0">
+                <div class="d-flex mt-2 mt-lg-0">
                     <a href="/export" class="btn btn-outline-light btn-sm rounded-pill px-3 shadow-sm d-inline-flex align-items-center">
                         <i class="bi bi-file-earmark-arrow-down me-1"></i> Экспорт остатков CSV
                     </a>
@@ -314,7 +325,7 @@
             {% if messages %}
                 {% for category, message in messages %}
                     <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mb-4" role="alert">
-                        {{ message }}
+                        {{ message | safe }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}

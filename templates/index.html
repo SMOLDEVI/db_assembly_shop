@@ -7,72 +7,80 @@
     </div>
 </div>
 
-<!-- Блок карточек показателей (Stats widgets) -->
+<!-- Блок карточек показателей (Stats widgets) — кликабельные -->
 <div class="row g-4 mb-5">
     <div class="col-md-3 col-sm-6">
-        <div class="card h-100">
-            <div class="card-body d-flex align-items-center p-4">
-                <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: #e2e8f0; color: #334155;">
-                    <i class="bi bi-box-seam fs-4"></i>
-                </div>
-                <div>
-                    <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Изделия на складе</h6>
-                    <h3 class="mb-0 fw-bold">{{ stats.total_products }} <span class="fs-6 text-muted fw-normal">шт.</span></h3>
+        <a href="/product_cells" class="text-decoration-none">
+            <div class="card h-100 card-hover-link">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: #e2e8f0; color: #334155;">
+                        <i class="bi bi-box-seam fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Изделия на складе</h6>
+                        <h3 class="mb-0 fw-bold">{{ stats.total_products }} <span class="fs-6 text-muted fw-normal">шт.</span></h3>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-3 col-sm-6">
-        <div class="card h-100">
-            <div class="card-body d-flex align-items-center p-4">
-                <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: #e0f2fe; color: #0369a1;">
-                    <i class="bi bi-nut fs-4"></i>
-                </div>
-                <div>
-                    <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Детали на складе</h6>
-                    <h3 class="mb-0 fw-bold">{{ stats.total_parts }} <span class="fs-6 text-muted fw-normal">шт.</span></h3>
+        <a href="/part_cells" class="text-decoration-none">
+            <div class="card h-100 card-hover-link">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: #e0f2fe; color: #0369a1;">
+                        <i class="bi bi-nut fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Детали на складе</h6>
+                        <h3 class="mb-0 fw-bold">{{ stats.total_parts }} <span class="fs-6 text-muted fw-normal">шт.</span></h3>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-3 col-sm-6">
-        <div class="card h-100">
-            <div class="card-body d-flex align-items-center p-4">
-                <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: #dbeafe; color: #1d4ed8;">
-                    <i class="bi bi-diagram-3 fs-4"></i>
-                </div>
-                <div>
-                    <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Спецификации</h6>
-                    <h3 class="mb-0 fw-bold">{{ stats.total_configs }} <span class="fs-6 text-muted fw-normal">актив.</span></h3>
+        <a href="/compositions" class="text-decoration-none">
+            <div class="card h-100 card-hover-link">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: #dbeafe; color: #1d4ed8;">
+                        <i class="bi bi-diagram-3 fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Спецификации</h6>
+                        <h3 class="mb-0 fw-bold">{{ stats.total_configs }} <span class="fs-6 text-muted fw-normal">актив.</span></h3>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
     
     <div class="col-md-3 col-sm-6">
-        <div class="card h-100">
-            <div class="card-body d-flex align-items-center p-4">
-                <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: {% if stats.deficit_count > 0 %}#fee2e2{% else %}#d1fae5{% endif %}; color: {% if stats.deficit_count > 0 %}#ef4444{% else %}#065f46{% endif %};">
-                    <i class="bi bi-exclamation-triangle fs-4"></i>
-                </div>
-                <div>
-                    <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Дефицит деталей</h6>
-                    <h3 class="mb-0 fw-bold">
-                        {% if stats.deficit_count > 0 %}
-                        <span class="text-danger">{{ stats.deficit_count }} поз.</span>
-                        {% else %}
-                        <span class="text-success">0 поз.</span>
-                        {% endif %}
-                    </h3>
+        <a href="/reports" class="text-decoration-none">
+            <div class="card h-100 card-hover-link">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 54px; height: 54px; background-color: {% if stats.deficit_count > 0 %}#fee2e2{% else %}#d1fae5{% endif %}; color: {% if stats.deficit_count > 0 %}#ef4444{% else %}#065f46{% endif %};">
+                        <i class="bi bi-exclamation-triangle fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-secondary mb-1 small text-uppercase fw-semibold">Дефицит деталей</h6>
+                        <h3 class="mb-0 fw-bold">
+                            {% if stats.deficit_count > 0 %}
+                            <span class="text-danger">{{ stats.deficit_count }} поз.</span>
+                            {% else %}
+                            <span class="text-success">0 поз.</span>
+                            {% endif %}
+                        </h3>
+                    </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
-<!-- Аналитика склада готовой продукции -->
+<!-- Аналитика склада готовой продукции + справка дефицита -->
 <div class="row g-4">
     <div class="col-lg-6 col-md-12">
         <div class="card h-100">
@@ -96,38 +104,80 @@
     
     <div class="col-lg-6 col-md-12">
         <div class="card h-100">
-            <div class="card-header bg-light border-bottom py-3">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-info-circle text-primary me-2"></i>Справка системы</h5>
+            <div class="card-header bg-light border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Дефицит по программе</h5>
+                <a href="/reports" class="btn btn-sm btn-outline-primary">План и дефицит</a>
             </div>
-            <div class="card-body p-4">
-                <p class="mb-3 text-secondary">Рабочая среда автоматизации и складского учета сборочного цеха ООО «ТехноПромСборка». Особенности и возможности:</p>
-                <div class="d-flex flex-column gap-3">
-                    <div class="d-flex align-items-start">
-                        <span class="badge bg-primary rounded-circle p-2 d-inline-flex me-3 mt-1"><i class="bi bi-cpu text-white" style="font-size: 0.8rem;"></i></span>
-                        <div>
-                            <h6 class="fw-bold mb-1" style="font-size: 0.95rem;">Учет номенклатуры и спецификаций</h6>
-                            <p class="text-muted small mb-0">Ведение каталога деталей и типов производимых изделий, а также гибкое описание их сборочного состава.</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-start">
-                        <span class="badge bg-success rounded-circle p-2 d-inline-flex me-3 mt-1"><i class="bi bi-geo-fill text-white" style="font-size: 0.8rem;"></i></span>
-                        <div>
-                            <h6 class="fw-bold mb-1" style="font-size: 0.95rem;">Адресное хранение (2 склада)</h6>
-                            <p class="text-muted small mb-0">Распределение ресурсов по ячейкам склада комплектующих (склад деталей) и склада готовых изделий.</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-start">
-                        <span class="badge bg-warning text-dark rounded-circle p-2 d-inline-flex me-3 mt-1"><i class="bi bi-tools text-dark" style="font-size: 0.8rem;"></i></span>
-                        <div>
-                            <h6 class="fw-bold mb-1" style="font-size: 0.95rem;">Автоматизация сборки и дефицита</h6>
-                            <p class="text-muted small mb-0">Мгновенный расчет нехватки деталей под месячные программы с авто-списанием со склада при сборке.</p>
-                        </div>
-                    </div>
+            <div class="card-body p-0">
+                {% if deficit_parts %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Деталь</th>
+                                <th style="width: 20%">Требуется</th>
+                                <th style="width: 15%">В наличии</th>
+                                <th style="width: 25%" class="text-danger">Дефицит</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in deficit_parts[:6] %}
+                            <tr style="background-color: #fef2f2;">
+                                <td>
+                                    <strong class="text-dark">{{ d.name }}</strong>
+                                    <div class="text-muted small">{{ d.article }}</div>
+                                </td>
+                                <td><span class="badge-custom bg-light border text-dark">{{ d.needed }} шт.</span></td>
+                                <td><span class="badge-custom bg-light border text-dark">{{ d.stock }} шт.</span></td>
+                                <td><span class="badge-custom badge-danger fw-bold">{{ d.deficit }} шт.</span></td>
+                            </tr>
+                            {% endfor %}
+                            {% if deficit_parts|length > 6 %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted small py-2">
+                                    <a href="/reports" class="text-decoration-none">Показать все {{ deficit_parts|length }} позиций</a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="text-success fs-1 mb-2"><i class="bi bi-check-circle-fill"></i></div>
+                    <h6 class="text-success fw-bold">Дефицит отсутствует</h6>
+                    <p class="text-muted small mb-0">Текущие остатки покрывают месячный план.</p>
+                </div>
+                {% endif %}
+            </div>
+            {% if deficit_products %}
+            <div class="card-footer bg-light border-top py-3">
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-box-seam me-1"></i> Затрагиваемые изделия:</h6>
+                <div class="d-flex flex-wrap gap-1">
+                    {% for pname in deficit_products %}
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-3 py-2">{{ pname }}</span>
+                    {% endfor %}
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<style>
+    .card-hover-link {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        cursor: pointer;
+    }
+    .card-hover-link:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08) !important;
+    }
+    a .card-hover-link .card-body h6,
+    a .card-hover-link .card-body h3 {
+        color: inherit;
+    }
+</style>
 
 {% if labels %}
 <script>
@@ -138,7 +188,6 @@
                 labels: {{ labels | safe }},
                 datasets: [{
                     data: {{ data | safe }},
-                    // Градиентная палитра на основе серовато-синей гаммы
                     backgroundColor: ['#4f7396', '#64748b', '#78909c', '#90a4ae', '#b0bec5', '#cfd8dc', '#eceff1'],
                     borderWidth: 2,
                     borderColor: '#ffffff'
